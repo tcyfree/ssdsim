@@ -1,0 +1,70 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ssd",
+            "args": [     
+                "1", "1", "example.ascii"
+                // "1",  "../t/web2_pre.csv","6","4570989"
+                // "1",  "../t/web3_pre.csv","6",
+                // "3",  "../t/ads_flag.csv","6","4245383"
+                // "3", "../t/hm_1.csv","6","1768359"
+                // "10",  "../t/1719_flag.csv","6","13824124"
+                // "10", "../t/1720_flag.csv","6","13175865"
+
+                // "1",  "../t/web1_pre.csv" ,"6" 
+                // "1",  "../t/web2_pre.csv","6"
+                // "1",  "../t/web3_pre.csv","6"
+                // "3",  "../t/usr_0.csv","1"
+                // "3", "../t/hm_1.csv","1"
+                // "15",  "../t/2016021620-LUN3.csv","1"
+                // "15", "../t/2016021718-LUN3.csv","1"
+
+                // "10", "2016021615-LUN6.csv"
+                // "3", "2016021710-LUN3.csv"                           
+                // "1", "web1_pre.csv"
+                // "1",  "web2_pre.csv"
+                // "1",  "web3_pre.csv"
+                //"1",  "proj_00.ssv"
+                //"1",  "trace/proj_3.csv"
+                //"1",  "trace/proj_4.csv"
+                //"1",  "trace/prn_1.csv"
+                //"1",  "trace/usr_2.csv"
+                // "3",  "trace/usr_0.csv"
+                // "1",  "t2/2016021614-LUN2.csv"
+                // "15",  "t2/2016021615-LUN6.csv"
+                // "15", "2016021718-LUN3.csv"
+                // "5", "2016021911-LUN6.csv"
+                // "1",  "t2/2016021619-LUN0.csv"
+                // "10",  "t2/2016021620-LUN3.csv"
+                // "10","trace/hm_1.csv"
+                //"1",  "trace/2016021612-LUN0.csv"
+                //"1",  "trace/2016021615-LUN2.csv"
+                //"1",  "trace/2016021708-LUN1.csv"
+                //"1",  "trace/2016021612-LUN2.csv"
+                //"1",  "trace/2016021620-LUN3.csv"
+                //"1",  "trace/2016021613-LUN0.csv"
+                //"1",  "trace/2016021620-LUN4.csv"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "preLaunchTask": "build",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
