@@ -20,6 +20,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 
 #include <stdlib.h>
 #include "initialize.h"
+#include "pagemap.h"
 
 #define FALSE		0
 #define TRUE		1

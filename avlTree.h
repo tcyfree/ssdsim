@@ -2,7 +2,7 @@
 #define AVLTREE_H 10000
 
 #include <string.h>
-#include <malloc.h>
+#include <sys/malloc.h>
 #include <stdlib.h>
 
 #define AVL_NULL		(TREE_NODE *)0

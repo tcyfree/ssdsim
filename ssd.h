@@ -29,12 +29,13 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 struct ssd_info *simulate(struct ssd_info *);
 struct ssd_info *simulate_multiple(struct ssd_info *, int);
 int get_requests(struct ssd_info *);
+int get_old_zwh(struct ssd_info *);
 struct ssd_info *buffer_management(struct ssd_info *);
 unsigned int lpn2ppn(struct ssd_info * ,unsigned int lsn);
 struct ssd_info *distribute(struct ssd_info *);
 void trace_output(struct ssd_info* );
 void statistic_output(struct ssd_info *);
-//void statistic_output_easy(struct ssd_info *ssd, unsigned long simulate_times);
+void statistic_output_easy(struct ssd_info *ssd, unsigned long simulate_times);
 unsigned int size(unsigned int);
 unsigned int transfer_size(struct ssd_info *,int,unsigned int,struct request *);
 int64_t find_nearest_event(struct ssd_info *);

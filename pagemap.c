@@ -19,6 +19,8 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #define _CRTDBG_MAP_ALLOC
 
 #include "pagemap.h"
+#include "flash.h"
+#include "ssd.h"
 
 
 /************************************************
