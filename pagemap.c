@@ -1900,7 +1900,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 	}
 	sort(arr,l);
-	for (int i = 0; i <= l; i++)
+	for (int i = 0; i < l; i++)
 	{
 		printf("move_page_lpn: %d  %d\n", arr[i], l);
 	}
