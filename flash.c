@@ -887,10 +887,10 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			//是否从hdd读数据
 			if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 			{
-				int tRH = 1000000;  // 从hdd读数据的时间
+				int read_hdd_time = ssd->parameter->time_characteristics.tRH;  // 从hdd读数据的时间
 				printf("r_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
-				sub->next_state_predict_time=ssd->current_time+1000+tRH;//下一状态预计时间为当前时间偏移1000等+读hdd时间
-				sub->complete_time=ssd->current_time+1000+tRH;
+				sub->next_state_predict_time=ssd->current_time+1000+read_hdd_time;//下一状态预计时间为当前时间偏移1000等+读hdd时间
+				sub->complete_time=ssd->current_time+1000+read_hdd_time;
 			} else {
 				sub->next_state_predict_time=ssd->current_time+1000;//下一状态预计时间为当前时间偏移1000等
 				sub->complete_time=ssd->current_time+1000;
@@ -917,10 +917,11 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->begin_time=ssd->current_time;
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
-			int tWH = 1000000;  // 从hdd读数据的时间
+			// 从hdd读数据的时间
+			int write_hdd_time = ssd->parameter->time_characteristics.tWH;
 			printf("w_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
-			sub->current_time=ssd->current_time+tWH;
-			sub->begin_time=ssd->current_time+tWH;
+			sub->current_time=ssd->current_time+write_hdd_time;
+			sub->begin_time=ssd->current_time+write_hdd_time;
 		}
 
 		//调用allocate_location()函数为sub分配物理地址

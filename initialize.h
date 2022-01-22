@@ -149,7 +149,8 @@ struct ac_time_characteristics{
 	int tDS;       //data setup time
 	int tDH;       //data hold time
 	int tWC;       //write cycle time
-	int tWH;       //WE high hold time
+	int tWH;       //write to hdd time
+	int tRH;       //read from hdd time
 	int tADL;      //address to data loading time
 	int tR;        //data transfer from cell to register
 	int tAR;       //ALE to RE delay

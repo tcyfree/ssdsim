@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "pagemap.h": "c",
+        "ssd.h": "c",
+        "initialize.h": "c"
+    }
+}

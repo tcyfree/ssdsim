@@ -1930,15 +1930,15 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	}
 	else
 	{
-		int tWH = 1000000;  // 数据写入HDD的时间，如果是随机写入则乘以page_move_count，否则按照顺序写入只记一次时间
+		int write_hdd_time = ssd->parameter->time_characteristics.tWH;  // 数据写入HDD的时间，如果是随机写入则乘以page_move_count，否则按照顺序写入只记一次时间
 		if (IS_RANDOM == TRUE)
 		{
-			tWH = page_move_count*tWH;
+			write_hdd_time = page_move_count*write_hdd_time;
 		}
 		
 		//上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC)+tWH;
+		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC)+write_hdd_time;
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 
