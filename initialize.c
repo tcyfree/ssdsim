@@ -230,7 +230,7 @@ struct ssd_info *initiation(struct ssd_info *ssd)
                         for (n = 0; n < 0.02 * ssd->parameter->page_block; n++)
                         {
 							// printf("enter 2\n");
-							lpn = 0;
+							lpn = 0; //??
 							while(ssd->dram->map->map_entry[lpn].state != 0){
 								lpn = random();
 								lpn %= large_lsn;
@@ -610,6 +610,10 @@ struct parameter_value *load_parameters(char parameter_file[30])
 			sscanf(buf + next_eql,"%d",&p->time_characteristics.tRHW);
 		}else if((res_eql=strcmp(buf,"t_WHR")) ==0){
 			sscanf(buf + next_eql,"%d",&p->time_characteristics.tWHR);
+		}else if((res_eql=strcmp(buf,"t_WH")) ==0){
+			sscanf(buf + next_eql,"%d",&p->time_characteristics.tWH);
+		}else if((res_eql=strcmp(buf,"t_RH")) ==0){
+			sscanf(buf + next_eql,"%d",&p->time_characteristics.tRH);
 		}else if((res_eql=strcmp(buf,"t_RST")) ==0){
 			sscanf(buf + next_eql,"%d",&p->time_characteristics.tRST);
 		}else if((res_eql=strcmp(buf,"erase limit")) ==0){

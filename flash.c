@@ -917,7 +917,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->begin_time=ssd->current_time;
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
-			// 从hdd读数据的时间
+			// 写入hdd的时间
 			int write_hdd_time = ssd->parameter->time_characteristics.tWH;
 			printf("w_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 			sub->current_time=ssd->current_time+write_hdd_time;
