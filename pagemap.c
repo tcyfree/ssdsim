@@ -1030,10 +1030,10 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		location=NULL;
 		ssd->dram->map->map_entry[lpn].pn=find_ppn(ssd,channel,chip,die,plane,block,page);
 		ssd->dram->map->map_entry[lpn].state=(ssd->dram->map->map_entry[lpn].state|sub->state);
-		//逻辑页更新之后，将hdd_flag置为0，是不是同一在写请求那儿加时间？？？
+		//逻辑页更新之后，将hdd_flag置为0，是不是统一在写请求那儿加时间？？？
 		if (ssd->dram->map->map_entry[lpn].hdd_flag!=0)
 		{
-			ssd->dram->map->map_entry[lpn].hdd_flag=2;
+			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 	}
 
@@ -1932,12 +1932,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	else
 	{
 		int write_hdd_time = ssd->parameter->time_characteristics.tWH;  // 数据写入HDD的时间，如果是随机写入则乘以page_move_count，否则按照顺序写入只记一次时间
-		if (IS_RANDOM == TRUE)
-		{
-			write_hdd_time = page_move_count*write_hdd_time;
-		}
-
-		//上面这一行+的时间==hdd的写入时间
+        write_hdd_time = IS_RANDOM ? write_hdd_time : page_move_count*write_hdd_time;
+        //上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
 		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC)+write_hdd_time;
 

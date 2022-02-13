@@ -1684,6 +1684,9 @@ Status services_2_write(struct ssd_info * ssd,unsigned int channel,unsigned int 
 										ssd->real_time_subreq--;
 									}
 									go_one_step(ssd,sub,NULL,SR_W_TRANSFER,NORMAL);       /*执行普通的状态的转变。*/
+									//hdd_flag重置为0
+									int lpn=sub->lpn;
+									ssd->dram->map->map_entry[lpn].hdd_flag=0;
 									delete_w_sub_request(ssd,channel,sub);                /*删掉处理完后的写子请求*/
 
 									*channel_busy_flag=1;
