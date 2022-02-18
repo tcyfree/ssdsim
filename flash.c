@@ -888,7 +888,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 			{
 				int read_hdd_time = ssd->parameter->time_characteristics.tRH;  // 从hdd读数据的时间
-				printf("r_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
+				// printf("r_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 				sub->next_state_predict_time=ssd->current_time+1000+read_hdd_time;//下一状态预计时间为当前时间偏移1000等+读hdd时间
 				sub->complete_time=ssd->current_time+1000+read_hdd_time;
 			} else {
@@ -919,7 +919,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		{
 			// 写入hdd的时间
 			int write_hdd_time = ssd->parameter->time_characteristics.tWH;
-			printf("w_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
+			// printf("w_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 			sub->current_time=ssd->current_time+write_hdd_time;
 			sub->begin_time=ssd->current_time+write_hdd_time;
 		}
@@ -1685,8 +1685,8 @@ Status services_2_write(struct ssd_info * ssd,unsigned int channel,unsigned int 
 									}
 									go_one_step(ssd,sub,NULL,SR_W_TRANSFER,NORMAL);       /*执行普通的状态的转变。*/
 									//hdd_flag重置为0
-									int lpn=sub->lpn;
-									ssd->dram->map->map_entry[lpn].hdd_flag=0;
+									// int lpn=sub->lpn;
+									// ssd->dram->map->map_entry[lpn].hdd_flag=0;
 									delete_w_sub_request(ssd,channel,sub);                /*删掉处理完后的写子请求*/
 
 									*channel_busy_flag=1;
@@ -1808,7 +1808,6 @@ Status services_2_write(struct ssd_info * ssd,unsigned int channel,unsigned int 
 
 struct ssd_info *process(struct ssd_info *ssd)
 {
-
 	/*********************************************************************************************************
 	*flag_die表示是否因为die的busy，阻塞了时间前进，-1表示没有，非-1表示有阻塞，
 	*flag_die的值表示die号,old ppn记录在copyback之前的物理页号，用于判断copyback是否遵守了奇偶地址的限制；

@@ -52,8 +52,9 @@ int  main(int argc, char* argv[])
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0],ssd->parameter->chip_num);//（各channel上chip数量，整个SSD上chip数量）
 //	make_aged(ssd);
+	pre_process_write_read(ssd);
 	pre_process_page(ssd); //读请求的预处理函数 页操作请求预处理函数
-	get_old_zwh(ssd);
+	// get_old_zwh(ssd);
 	printf("free_lsb: %d, free_csb: %d, free_msb: %d\n", ssd->free_lsb_count, ssd->free_csb_count, ssd->free_msb_count);
 	printf("Total request num: %lld.\n", ssd->total_request_num);
 	for (i=0;i<ssd->parameter->channel_number;i++)
@@ -180,7 +181,7 @@ struct ssd_info *simulate_multiple(struct ssd_info *ssd, int sTIMES)
 	int simulate_times = 0;
 	//int sTIMES = 10;
 	printf("\n");
-	printf("begin simulating.......................\n");
+	printf("begin simulate_multiple.......................\n");
 	printf("\n");
 	printf("\n");
 	printf("   ^o^    OK, please wait a moment, and enjoy music and coffee   ^o^    \n");
@@ -1624,6 +1625,7 @@ int get_old_zwh(struct ssd_info *ssd){
 *********************************************************************************************/
 struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 {
+	// printf("no_buffer_distribute");
 	unsigned int lsn,lpn,last_lpn,first_lpn,complete_flag=0, state;
 	unsigned int flag=0,flag1=1,active_region_flag=0;           //to indicate the lsn is hitted or not
 	struct request *req=NULL;

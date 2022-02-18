@@ -30,6 +30,7 @@ void trace_assert(int64_t time_t,int device,unsigned int lsn,int size,int ope);
 struct local *find_location(struct ssd_info *ssd,unsigned int ppn);
 unsigned int find_ppn(struct ssd_info * ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane,unsigned int block,unsigned int page);
 struct ssd_info *pre_process_page(struct ssd_info *ssd);
+struct ssd_info *pre_process_write_read(struct ssd_info *ssd);
 unsigned int get_ppn_for_pre_process(struct ssd_info *ssd,unsigned int lsn);
 struct ssd_info *get_ppn_lf(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane,struct sub_request *sub);
 struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane,struct sub_request *sub);

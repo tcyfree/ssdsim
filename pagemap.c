@@ -304,6 +304,182 @@ struct ssd_info *pre_process_page(struct ssd_info *ssd)
 	return ssd;
 }
 
+/**************************************************
+*预处理数据到SSD中：1 预读 2 更新写
+***************************************************/
+struct ssd_info *pre_process_write_read(struct ssd_info *ssd)
+{
+	int fl=0;
+	unsigned int device,lsn,size,ope,lpn,full_page;//IO操作的相关参数，分别是目标设备号，逻辑扇区号，操作长度，操作类型，逻辑页号
+	unsigned int largest_lsn,sub_size,ppn,add_size=0;//最大的逻辑扇区号，子页操作长度，物理页号，该IO已处理完毕的长度`
+	unsigned int i=0,j,k;
+	int map_entry_new,map_entry_old,modify;
+	int flag=0;
+	char buffer_request[200];//请求队列缓冲区
+	struct local *location;
+	int64_t time;
+
+	printf("\n");
+	printf("begin pre_process_write_read.................\n");
+	ssd->tracefile2=fopen("../trace/proj_0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
+	if(ssd->tracefile2 == NULL )      /*打开trace文件从中读取请求*/
+	{
+		printf("the trace file2 can't open\n");
+		return NULL;
+	}
+	if(ssd->parameter->subpage_page == 32){
+		full_page = 0xffffffff;
+		}
+	else{
+		full_page=~(0xffffffff<<(ssd->parameter->subpage_page));
+		}
+	//full_page=~(0xffffffff<<(ssd->parameter->subpage_page));
+	/*计算出这个ssd的最大逻辑扇区号*/
+	largest_lsn=(unsigned int )((ssd->parameter->chip_num*ssd->parameter->die_chip*ssd->parameter->plane_die*ssd->parameter->block_plane*ssd->parameter->page_block*ssd->parameter->subpage_page)*(1-ssd->parameter->overprovide));
+
+	while(fgets(buffer_request,200,ssd->tracefile2))
+	//逐行从tracefile文件中每次读取199字符，直到读完整个trace为止
+	{
+		sscanf(buffer_request,"%lld %d %d %d %d",&time,&device,&lsn,&size,&ope);
+		if(buffer_request[0]=='\n')
+			break;
+		fl++;   //已读的I/O数量计数
+		trace_assert(time,device,lsn,size,ope);       /*断言，当读到的time，device，lsn，size，ope不合法时就会处理*/
+		// ssd->total_request_num++;
+		add_size=0;        /*add_size是这个请求已经预处理的大小*/
+
+//若ope为0则说明是写请求，但是由于这个pre_process_page只是服务于读请求，所以程序流会忽略写请求直接继续调用fget()读取下一个IOtrace进行读请求的操作。
+//而当ope为1时说明IO为读请求，程序会判断已完成的IO长度add_size是否小于IO长度size，若大于或等于size说明读IO已经处理完毕继续下一IO的读取；否则说明该IO读尚未处理完毕，要继续下面的步骤：首先程序会调整lsn（防止lsn比最大的lsn还大），然后计算sub_size即lsn所在的page中实际IO需要操作的长度:这部分长度 = page子页数量 - lsn在page中的起始子页位置；随后判断已经处理的IO长度add_size和当前page中的实际操作长度sub_size之和是否超过该IOtrace的长度size：若已经超过说明sub_size实际上的长度需要调整(实际上不可能超过IOtrace所规定的size，否则就是错误操作，而这里的sub_size主要是针对首次的lsn和最后一次的lsn，因为其余中间部分的lsn基本上都会是从page页的起始位置开始，操作的长度都会是整个page大小)
+// if(ope==1)     /*这里只是读请求的预处理，需要提前将相应位置的信息进行相应修改*/
+// 		{
+		while(add_size<size)//若已经预处理的操作长度<操作的长度，则执行下面操作
+			{
+				lsn=lsn%largest_lsn;                                    /*防止获得的lsn比最大的lsn还大*/
+				sub_size=ssd->parameter->subpage_page-(lsn%ssd->parameter->subpage_page);
+				//这里的sub_size主要是为了定位好子请求操作位置的，这个位置是相对于某一个特定的page而言的，从这个page的第一个sub_page开始计算到这个特定的操作位置
+				if(add_size+sub_size>=size) /*只有当一个请求的大小小于一个page的大小时或者是处理一个请求的最后一个page时会出现这种情况*/
+				{
+					sub_size=size-add_size;
+					add_size+=sub_size;
+				}
+
+//如果非法的话则打印sub_size的信息；同时程序会继续统计当前lsn所在的lpn，并判断该lpn在内存dram中的映射表项map_entry[lpn]的相关子页映射是否有效：若map_entry[lpn].state不为0则说明此时该lpn的子页映射可能有效，可能存在有直接可用的子页。
+//程序会接着判断state是否>0.若不成立只能说明此时state<0也就是子页映射全部有效(这里是因为map_entry[lpn].state是一个int类型，默认下应该是个有符号的整型取值范围，因此若state<0那么换算成二进制数值便是全1的情况，此时所有子页都是有效置位)
+				if((sub_size>ssd->parameter->subpage_page)||(add_size>size))/*当预处理一个子大小时，这个大小大于一个page或是已经处理的大小大于size就报错*/
+				{
+					printf("pre_process sub_size:%d\n",sub_size);
+				}
+
+                /*******************************************************************************************************
+				*利用逻辑扇区号lsn计算出逻辑页号lpn
+				*判断这个dram中映射表map中在lpn位置的状态
+				*A，这个状态==0，表示以前没有写过，现在需要直接将sub_size大小的子页写进去写进去（应该就仅仅打个标记）
+				*B，这个状态>0，表示，以前有写过，这需要进一步比较状态，因为新写的状态可以与以前的状态有重叠的扇区的地方
+				********************************************************************************************************/
+				lpn=lsn/ssd->parameter->subpage_page;  //所在逻辑页号=逻辑扇区号（逻辑子页号）/一个页里子页数
+//若map_entry[lpn].state为0则说明此时该lpn对应的子页映射无效，需要程序重新分配出有效状态的物理子页给读操作请求，因此需要从SSD中先将数据写入该子页中然后以供读请求操作。函数会调用get_ppn_for_pre_process()函数取得当前IOtrace的lsn对应的物理页号ppn，随后根据ppn调用find_location()函数取得对应的物理地址信息.接着统计更新ssd、当前所在的channel和channel下所在的chip中的program_count计数，表示已经成功从SSD中写入数据并且读到了dram中，此时需要更新lpn对应的map_entry[lpn].pn为新获取到的ppn。跟着程序会调用set_entry_state()函数重新设置更新子页的状态位并且将其赋值给map_entry[lpn].state。以及根据location物理地址更新lsn对应的物理page的相关参数，主要是lpn、valid_state有效状态位和free_state空闲状态位标志，最后释放并置空location。
+				if(ssd->dram->map->map_entry[lpn].state==0)                 /*状态为0的情况*/
+				{
+					/**************************************************************
+					*获得利用get_ppn_for_pre_process函数获得ppn，再得到location
+					*修改ssd的相关参数，dram的映射表map，以及location下的page的状态
+					***************************************************************/
+					ppn=get_ppn_for_pre_process(ssd,lsn);
+					location=find_location(ssd,ppn);
+					ssd->program_count++;
+					ssd->channel_head[location->channel].program_count++;
+					ssd->channel_head[location->channel].chip_head[location->chip].program_count++;	//至此，表示已经成功的写入数据（读请求预处理）
+					ssd->dram->map->map_entry[lpn].pn=ppn;
+					ssd->dram->map->map_entry[lpn].state=set_entry_state(ssd,lsn,sub_size);   //0001（获取的子请求状态赋值给逻辑页）
+					ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=lpn;
+					ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=ssd->dram->map->map_entry[lpn].state;
+					ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=((~ssd->dram->map->map_entry[lpn].state)&full_page);
+
+					free(location);
+					location=NULL;
+				}//if(ssd->dram->map->map_entry[lpn].state==0)
+//如果state>0则说明可能其中只是有部分子页有效，而有可能需要读取数据的子页并未存在dram和buffer中，所以需要将从SSD中写入到dram中的子页进行相应的操作，但是必须要确认到哪些子页需要进行写入。因此程序进行进一步的确认，首先函数会调用set_entry_state()进行子页映射状态位的设置，设置后的结果保存在map_entry_new中set_entry_state()函数会根据lsn和sub_size的参数对从lsn位置开始的子页长度为sub_size的部分标记状态位置1，代表了需要重新在map_entry[lpn].state中进行设置的子页有效映射。接着函数会用map_entry_old保存当前dram中map_entry[lpn].state的位映射状态信息，将map_entry_new和map_entry_old进行一个按位或计算操作从而更新映射状态位，并将结果保存在modify中。随后将lpn的映射物理页pn保存至ppn中；完成映射更新后就代表了程序已经完成了该lsn在当前lpn下的读操作。随后程序会调用find_location()函数进行物理地址的查找，紧接着会统计相关的ssd信息：更新整个ssd、当前channel和该channel下当前所在的chip中的program_count计数，表示完成一次写page操作计数；然后将modify中保存的映射更新信息赋值给当前lsn所在的lpn对应的map_entry[lpn].state，表示已经完成了将数据写入到SSD相对应的page子页中且已经读取到了dram中；同时根据location物理地址结构体的信息设置page中的子页有效映射位valid_state也为modify以保持与dram中的同步；且同时设置更新该page中剩余free状态的子页，接着释放并置空location。
+				else if(ssd->dram->map->map_entry[lpn].state>0)           /*状态不为0的情况*/
+				{
+					map_entry_new=set_entry_state(ssd,lsn,sub_size);      /*得到新的状态，并与原来的状态相或的到一个状态*/
+					map_entry_old=ssd->dram->map->map_entry[lpn].state;
+                    modify=map_entry_new|map_entry_old;
+					ppn=ssd->dram->map->map_entry[lpn].pn;
+					location=find_location(ssd,ppn);
+
+					ssd->program_count++;
+					ssd->channel_head[location->channel].program_count++;
+					ssd->channel_head[location->channel].chip_head[location->chip].program_count++;
+					ssd->dram->map->map_entry[lsn/ssd->parameter->subpage_page].state=modify;
+					ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=modify;
+					ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=((~modify)&full_page);
+
+					free(location);
+					location=NULL;
+				}//else if(ssd->dram->map->map_entry[lpn].state>0)
+//当函数完成上述过程后，证明已经成功完成了当前IOtrace的lsn所对应的lpn读操作，这时候只是读完成了至多一个page的大小，因此程序此时需要更新lsn的位置即令lsn加上已经读取完毕的sub_size大小，且同时更新已经处理的IO长度add_size。接着程序流会继续判断当前是否已经完成了该IOtrace的处理，如果未完成则重复以上的过程。当完成了该IOtrace的读请求处理后，程序会回到fgets()函数中继续读取tracefile中的下一个IO，周始反复一直到读取完所有的IOtrace。
+				lsn=lsn+sub_size;                                         /*下个子请求的起始位置*/
+				add_size+=sub_size;                                       /*已经处理了的add_size大小变化*/
+			}//while(add_size<size)
+		// }
+	}
+
+//当程序处理完tracefile中所有的读请求后，便开始打印处理完成信息，并且调用fclose()关闭tracefile文件流。
+
+	printf("\n");
+	printf("pre_process_write_read is complete!\n");
+
+	fclose(ssd->tracefile2);
+//随即用一个多重嵌套for循环将SSD当前状态下每一个plane的free空闲状态页的数量都按照固定格式写入到ssd->outputfile中。每一次针对每个plane都会用fflush()函数立即将缓冲区中的数据流更新写入到outputfile文件中。当完成上述所有操作后，pre_process_page便完成了其任务，返回ssd结构体。
+	for(i=0;i<ssd->parameter->channel_number;i++)
+    for(j=0;j<ssd->parameter->die_chip;j++)
+	for(k=0;k<ssd->parameter->plane_die;k++)
+	{
+		fprintf(ssd->outputfile,"chip:%d,die:%d,plane:%d have free page2: %d\n",i,j,k,ssd->channel_head[i].chip_head[0].die_head[j].plane_head[k].free_page);
+		fflush(ssd->outputfile);
+	}
+
+	// unsigned int x=0,y=0,i=0,j=0,k=0,l=0,m=0,n=0; //这里定义的八个uint变量应该就是指为了循环遍历初始化上述这八个层次中的所有结构参数而设定的
+    // unsigned int lpn = 0;
+    // unsigned int lsn = 100000;
+    // unsigned int ppn, full_page;
+	// printf("enter\n");
+    // for (i = 0; i < ssd->parameter->channel_number; i++)
+    // {
+    //     for (j = 0; j < ssd->parameter->chip_num / ssd->parameter->channel_number; j++)
+    //     {
+    //         for (k = 0; k < ssd->parameter->die_chip; k++)
+    //         {
+    //             for (l = 0; l < ssd->parameter->plane_die; l++)
+    //             {
+    //                 for (m = 0; m < ssd->parameter->block_plane; m++)
+    //                 {
+    //                     for (n = 0; n < 0.02 * ssd->parameter->page_block; n++)
+    //                     {
+    //                         ppn = find_ppn(ssd, i, j, k, l, m, n);
+    //                         //modify state
+    //                         ssd->dram->map->map_entry[lpn].pn = ppn;
+    //                         ssd->dram->map->map_entry[lpn].state = set_entry_state(ssd, 0, 16);   //0001
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].lpn = lpn;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].valid_state = ssd->dram->map->map_entry[lpn].state;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].free_state = ((~ssd->dram->map->map_entry[lpn].state) & full_page);
+    //                         //--
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].last_write_page++;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].free_page_num--;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].free_page--;
+    //                         lpn++;
+    //                     }
+    //                 }
+
+    //             }
+    //         }
+    //     }
+    // }
+	// abort();
+
+	return ssd;
+}
+
 /**************************************
 *函数功能是为预处理函数获取物理页号ppn
 *获取页号分为动态获取和静态获取
@@ -1030,7 +1206,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		location=NULL;
 		ssd->dram->map->map_entry[lpn].pn=find_ppn(ssd,channel,chip,die,plane,block,page);
 		ssd->dram->map->map_entry[lpn].state=(ssd->dram->map->map_entry[lpn].state|sub->state);
-		//逻辑页更新之后，将hdd_flag置为0，是不是统一在写请求那儿加时间？？？
+		//逻辑页更新之后，将hdd_flag置为0，是不是统一在写请求那儿加时间
 		if (ssd->dram->map->map_entry[lpn].hdd_flag!=0)
 		{
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
@@ -1287,11 +1463,13 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 	flag = 0;
 	for(i=0;i<ssd->parameter->page_block;i++){
 		if(ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state!=0){
+			printf("valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
 			flag = 1;
 			}
 		}
 	if(flag==1){
 		printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n",channel, chip, die, plane, block);
+		// abort();
 		return FAILURE;
 		}
 	unsigned int origin_free_page_num, origin_free_lsb_num, origin_free_csb_num, origin_free_msb_num;
@@ -1776,7 +1954,6 @@ int gc_direct_fast_erase(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	//return SUCCESS;
 }
 
-
 Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * transfer_size)
 {
 	unsigned int lpn=0;
@@ -1825,6 +2002,7 @@ void sort(int a[], int m)
 ********************************************************************************************************************************************/
 int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
 {
+	// printf("\n uninterrupt_gc().\n");
 	unsigned int i=0,invalid_page=0;
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
@@ -1865,7 +2043,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].fast_erase = TRUE;
 	//***********************************************
 	free_page=0;
-	int arr[300],l=0;
+	int arr[3000],l=0;
 	for(i=0;i<ssd->parameter->page_block;i++)		                                                     /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 	{
 		if ((ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].free_state&PG_SUB)==0x0000000f)
@@ -1901,10 +2079,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	}
     //将lpn排序
 	sort(arr,l);
-	for (int i = 0; i < l; i++)
+	// FILE * fp;
+//    fp = fopen ("./move_page_lpn.txt", "a+");
+//    fprintf(fp, "%s\n", "=================================================");
+   for (int i = 0; i < l; i++)
 	{
 		printf("move_page_lpn: %d  %d\n", arr[i], l);
+		// fprintf(fp, "move_page_lpn: %d\n",arr[i]);
 	}
+	// fflush(fp);
+	// fclose(fp);
 	
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
@@ -2486,6 +2670,7 @@ Status dr_for_channel(struct ssd_info *ssd, unsigned int channel)
 ************************************************************************************************************/
 unsigned int gc(struct ssd_info *ssd,unsigned int channel, unsigned int flag)
 {
+	// printf("gc");
 	unsigned int i;
 	int flag_direct_erase=1,flag_gc=1,flag_invoke_gc=1;
 	unsigned int flag_priority=0;
