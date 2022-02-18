@@ -215,46 +215,46 @@ struct ssd_info *initiation(struct ssd_info *ssd)
 	printf("initiation is completed!\n");
 	large_lsn=(int)((ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num)*(1-ssd->parameter->overprovide));
     //init valid pages
-    lpn = 0;
-	printf("enter\n");
-    for (i = 0; i < ssd->parameter->channel_number; i++)
-    {
-        for (j = 0; j < ssd->parameter->chip_num / ssd->parameter->channel_number; j++)
-        {
-            for (k = 0; k < ssd->parameter->die_chip; k++)
-            {
-                for (l = 0; l < ssd->parameter->plane_die; l++)
-                {
-                    for (m = 0; m < ssd->parameter->block_plane; m++)
-                    {
-                        for (n = 0; n < 0.02 * ssd->parameter->page_block; n++)
-                        {
-							// printf("enter 2\n");
-							lpn = 0; //??
-							while(ssd->dram->map->map_entry[lpn].state != 0){
-								lpn = random();
-								lpn %= large_lsn;
-							}
-							// printf("%d\n", lpn);
-                            ppn = find_ppn(ssd, i, j, k, l, m, n);
-                            //modify state
-                            ssd->dram->map->map_entry[lpn].pn = ppn;
-                            ssd->dram->map->map_entry[lpn].state = set_entry_state(ssd, 0, 16);   //0001
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].lpn = lpn;
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].valid_state = ssd->dram->map->map_entry[lpn].state;
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].free_state = ((~ssd->dram->map->map_entry[lpn].state) & full_page);
-                            //--
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].last_write_page++;
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].free_page_num--;
-                            ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].free_page--;
-                            lpn++;
-                        }
-                    }
+    // lpn = 0;
+	// printf("enter\n");
+    // for (i = 0; i < ssd->parameter->channel_number; i++)
+    // {
+    //     for (j = 0; j < ssd->parameter->chip_num / ssd->parameter->channel_number; j++)
+    //     {
+    //         for (k = 0; k < ssd->parameter->die_chip; k++)
+    //         {
+    //             for (l = 0; l < ssd->parameter->plane_die; l++)
+    //             {
+    //                 for (m = 0; m < ssd->parameter->block_plane; m++)
+    //                 {
+    //                     for (n = 0; n < 0.02 * ssd->parameter->page_block; n++)
+    //                     {
+	// 						// printf("enter 2\n");
+	// 						lpn = 0; //??
+	// 						while(ssd->dram->map->map_entry[lpn].state != 0){
+	// 							lpn = random();
+	// 							lpn %= large_lsn;
+	// 						}
+	// 						// printf("%d\n", lpn);
+    //                         ppn = find_ppn(ssd, i, j, k, l, m, n);
+    //                         //modify state
+    //                         ssd->dram->map->map_entry[lpn].pn = ppn;
+    //                         ssd->dram->map->map_entry[lpn].state = set_entry_state(ssd, 0, 16);   //0001
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].lpn = lpn;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].valid_state = ssd->dram->map->map_entry[lpn].state;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].free_state = ((~ssd->dram->map->map_entry[lpn].state) & full_page);
+    //                         //--
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].last_write_page++;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].free_page_num--;
+    //                         ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].free_page--;
+    //                         lpn++;
+    //                     }
+    //                 }
 
-                }
-            }
-        }
-    }
+    //             }
+    //         }
+    //     }
+    // }
 	// abort();
 	return ssd;
 }
