@@ -303,7 +303,6 @@ struct ssd_info *pre_process_page(struct ssd_info *ssd)
 
 	return ssd;
 }
-
 /**************************************************
 *预处理数据到SSD中：1 预读 2 更新写
 ***************************************************/
@@ -321,7 +320,7 @@ struct ssd_info *pre_process_write_read(struct ssd_info *ssd)
 
 	printf("\n");
 	printf("begin pre_process_write_read.................\n");
-	ssd->tracefile2=fopen("../trace/proj_0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
+	ssd->tracefile2=fopen("../trace/ts_0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
 	if(ssd->tracefile2 == NULL )      /*打开trace文件从中读取请求*/
 	{
 		printf("the trace file2 can't open\n");
@@ -1469,7 +1468,7 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 		}
 	if(flag==1){
 		printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n",channel, chip, die, plane, block);
-		// abort();
+		abort();
 		return FAILURE;
 		}
 	unsigned int origin_free_page_num, origin_free_lsb_num, origin_free_csb_num, origin_free_msb_num;
@@ -2078,7 +2077,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 	}
     //将lpn排序
-	sort(arr,l);
+	// sort(arr,l);
 	// FILE * fp;
 //    fp = fopen ("./move_page_lpn.txt", "a+");
 //    fprintf(fp, "%s\n", "=================================================");
