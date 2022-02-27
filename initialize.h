@@ -602,7 +602,7 @@ struct parameter_value{
 struct entry{
 	unsigned int pn;                //表示逻辑页所在的物理页号。物理号，既可以表示物理页号，也可以表示物理子页号，也可以表示物理块号
 	unsigned int state;             //十六进制表示的话是0000-FFFF，每位表示相应的子页是否有效（页映射）。比如在这个页中，0，1号子页有效，2，3无效，这个应该是0x0003.//宋：state表示这个逻辑页中，有效子页的位置
-	int hdd_flag; 
+	int hdd_flag; //是否是hdd数据
 };
 
 
