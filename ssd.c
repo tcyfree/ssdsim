@@ -20,6 +20,23 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 
 #include "ssd.h"
 
+char* exec_disksim_syssim(int times, int random) 
+{
+	char average[1024], command[1024];
+	FILE * temp;
+	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, random);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d > temp.txt", times, random);
+	printf("%s\n", command);
+	int i = system(command);
+	printf("i: %d\n", i);
+	temp = fopen("../disksim/valid/temp.txt","r");
+	if(temp == NULL )      /*打开trace文件从中读取请求*/
+	{
+		printf("the trace temp can't open\n");
+	}
+	fgets(average, 200, temp);
+	return average;
+}
 /********************************************************************************************************************************
 1，main函数中initiatio()函数用来初始化ssd,；2，make_aged()函数使SSD成为aged，aged的ssd相当于使用过一段时间的ssd，里面有失效页，
 non_aged的ssd是新的ssd，无失效页，失效页的比例可以在初始化参数中设置；3，pre_process_page()函数提前扫一遍读请求，把读请求
@@ -31,11 +48,12 @@ int  main(int argc, char* argv[])
 {
 	unsigned  int i,j,k;
 	struct ssd_info *ssd;
-
+    char *average;
 	#ifdef DEBUG
 	printf("enter main\n");
 	#endif
-
+	average = exec_disksim_syssim(10, 1);
+	printf("average: %s\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化

@@ -23,6 +23,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include "initialize.h"
 #include "flash.h"
 #include "pagemap.h"
+#include "disksim.h"
 
 #define MAX_INT64  0x7fffffffffffffffll
 
