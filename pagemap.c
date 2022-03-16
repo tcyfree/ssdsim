@@ -2008,11 +2008,12 @@ void sort(int a[], int m)
 ********************************************************************************************************************************************/
 int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
 {
-	// printf("\n uninterrupt_gc().\n");
 	unsigned int i=0,invalid_page=0;
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
 	unsigned int total_invalid_page_num=0;
+	char *average = exec_disksim_syssim(1, 1);
+	printf("average_gc: %s\n",average);
 
 	if(find_active_block(ssd,channel,chip,die,plane)!=SUCCESS)                                           /*获取活跃块*/
 	{
