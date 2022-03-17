@@ -2093,10 +2093,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
    int page_num = ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num;
    int index=0,series[1024*4];
    int times=0,is_sequential=0;
-   int write_hdd_time = 0;
+   unsigned write_hdd_time = 0;
    for (i = 0; i < l; i++)
    {
-		printf("move_page_lpn: %d  %d\n", arr[i], l);
+		// printf("move_page_lpn: %d  %d\n", arr[i], l);
 		int temp=arr[i];
 		index=0;
 		int j = 0;
@@ -2125,7 +2125,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					temp=j;
 					index++;
 					//有可能会很多连续的，所以加个判断限制
-					if (index>=64)
+					if (index>=512)
 					{
 						break;
 					}
@@ -2138,6 +2138,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		times++;
 		char * avg = exec_disksim_syssim(times, is_sequential);
 		write_hdd_time += (int)avg*times;
+		if (write_hdd_time < 0)
+		{
+			printf("write_hdd_time:%d\n", write_hdd_time);
+			abort();
+		}
 		times = 0;
 	}
 	
