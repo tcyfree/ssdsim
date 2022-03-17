@@ -2012,8 +2012,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
 	unsigned int total_invalid_page_num=0;
-	char *average = exec_disksim_syssim(1, 1);
-	printf("average_gc: %s\n",average);
 
 	if(find_active_block(ssd,channel,chip,die,plane)!=SUCCESS)                                           /*获取活跃块*/
 	{
@@ -2094,8 +2092,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
    sort(arr,l);
    int page_num = ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num;
    int index=0,series[1024*4];
+   int times=0,is_sequential=0;
+   int write_hdd_time = 0;
    for (i = 0; i < l; i++)
-    {
+   {
 		printf("move_page_lpn: %d  %d\n", arr[i], l);
 		int temp=arr[i];
 		index=0;
@@ -2115,6 +2115,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					// if (lpn != -1)
 					// {
 						move_page(ssd, location, &transfer_size);
+						times++;
+						is_sequential = 11;
 						//去掉page_move_count++算是减少时间乘数
 						// page_move_count++;
 					// } else {
@@ -2132,6 +2134,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}	
 			}
 		}
+		//+1是因为之前还有一次
+		times++;
+		char * avg = exec_disksim_syssim(times, is_sequential);
+		write_hdd_time += (int)avg*times;
+		times = 0;
 	}
 	
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
@@ -2159,10 +2166,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	}
 	else
 	{
-		int write_hdd_time = ssd->parameter->time_characteristics.tWH;  // 数据写入HDD的时间，如果是随机写入则乘以page_move_count，否则按照顺序写入只记一次时间
+		// int write_hdd_time = ssd->parameter->time_characteristics.tWH;  // 数据写入HDD的时间，如果是随机写入则乘以page_move_count，否则按照顺序写入只记一次时间
         //上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+write_hdd_time)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
+		printf("write_hdd_time: %d\n", write_hdd_time);
+		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 
