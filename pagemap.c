@@ -1166,7 +1166,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		ppn=ssd->dram->map->map_entry[lpn].pn;
 		location=find_location(ssd,ppn);
 		//如果是hdd_flag=1,则location.lpn=0(move_page)
-		if(	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn!=lpn && ssd->dram->map->map_entry[lpn].hdd_flag==0)
+		if(	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn!=lpn && ssd->dram->map->map_entry[lpn].hdd_flag != 1)
 		{
 			printf("\nError %din get_ppn()2\n", ssd->dram->map->map_entry[lpn].hdd_flag);
 		}
@@ -1206,7 +1206,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		ssd->dram->map->map_entry[lpn].pn=find_ppn(ssd,channel,chip,die,plane,block,page);
 		ssd->dram->map->map_entry[lpn].state=(ssd->dram->map->map_entry[lpn].state|sub->state);
 		//逻辑页更新之后，将hdd_flag置为0
-		if (ssd->dram->map->map_entry[lpn].hdd_flag!=0)
+		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
@@ -2110,12 +2110,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					if (j - temp == 1)
 					{
 						series[index] = j;
-						ssd->dram->map->map_entry[j].hdd_flag = 1;
-						location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-						int lpn = ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
-						move_page(ssd, location, &transfer_size);
+						//hdd_flag=2表示联系块，下次读从SSD读取
+						ssd->dram->map->map_entry[j].hdd_flag = 2;
 						times++;
-						page_move_count++;
 						temp = j;
 						index++;
 						//有可能会很多连续的，所以加个判断限制
@@ -2168,17 +2165,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				//修改map信息，设flag.
 				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 				page_move_count++;
-				times++;
+				char *avg = exec_disksim_syssim(1, 0, 0);
+				write_hdd_time += (int)avg * 1;
+				if (write_hdd_time < 0)
+				{
+					printf("write_hdd_time:%d\n", write_hdd_time);
+					abort();
+				}
 				free(location);
 				location = NULL;
 			}
-		}
-		char *avg = exec_disksim_syssim(times, 0, 0); //随机写times次
-		write_hdd_time += (int)avg * times;
-		if (write_hdd_time < 0)
-		{
-			printf("write_hdd_time:%d\n", write_hdd_time);
-			abort();
 		}
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/

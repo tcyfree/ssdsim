@@ -885,7 +885,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
 			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
 			//是否从hdd读数据
-			if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+			if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 			{
 				int read_hdd_time=0;
 				char *avg = exec_disksim_syssim(1, 1, 0);
@@ -1691,9 +1691,6 @@ Status services_2_write(struct ssd_info * ssd,unsigned int channel,unsigned int 
 										ssd->real_time_subreq--;
 									}
 									go_one_step(ssd,sub,NULL,SR_W_TRANSFER,NORMAL);       /*执行普通的状态的转变。*/
-									//hdd_flag重置为0
-									// int lpn=sub->lpn;
-									// ssd->dram->map->map_entry[lpn].hdd_flag=0;
 									delete_w_sub_request(ssd,channel,sub);                /*删掉处理完后的写子请求*/
 
 									*channel_busy_flag=1;
