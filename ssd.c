@@ -20,13 +20,21 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 
 #include "ssd.h"
 
-char* exec_disksim_syssim(int times, int is_sequential) 
+/**
+ * @brief 执行次数、读写、随机/顺序
+ * 
+ * @param times 
+ * @param is_read 
+ * @param is_sequential 
+ * @return char* 
+ */
+char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
 {
 	char average[1024], command[1024];
 	FILE * temp;
 	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
 	//容器里面执行
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d > temp.txt", times, is_sequential);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
@@ -54,7 +62,8 @@ int  main(int argc, char* argv[])
 	#ifdef DEBUG
 	printf("enter main\n");
 	#endif
-	average = exec_disksim_syssim(10, 1);
+	//顺序读10次
+	average = exec_disksim_syssim(10, 1, 1);
 	printf("average: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
@@ -66,6 +75,11 @@ int  main(int argc, char* argv[])
 	sscanf(argv[1], "%d", &sTIMES);
 	sscanf(argv[2], "%d", &speed_up);
 	sscanf(argv[3], "%s", &(ssd->tracefilename));
+	if (argc == 5)
+	{
+		sscanf(argv[4], "%d", &(ssd->is_sequential));
+		printf("is_sequential: %d.\n", ssd->is_sequential);
+	}
 	printf("Running trace file: %s.\n", ssd->tracefilename);
 	//*****************************************************
 

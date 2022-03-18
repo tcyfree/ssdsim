@@ -887,8 +887,14 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			//是否从hdd读数据
 			if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 			{
-				int read_hdd_time = ssd->parameter->time_characteristics.tRH;  // 从hdd读数据的时间
-				// printf("r_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
+				int read_hdd_time=0;
+				char *avg = exec_disksim_syssim(1, 1, 0);
+				read_hdd_time += (int)avg * 1;
+				if (read_hdd_time < 0)
+				{
+					printf("read_hdd_time:%d\n", read_hdd_time);
+					abort();
+				}
 				sub->next_state_predict_time=ssd->current_time+1000+read_hdd_time;//下一状态预计时间为当前时间偏移1000等+读hdd时间
 				sub->complete_time=ssd->current_time+1000+read_hdd_time;
 			} else {
@@ -918,8 +924,9 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			// 写入hdd的时间
-			int write_hdd_time = ssd->parameter->time_characteristics.tWH;
-			// printf("w_hdd_flag=: %d lpn=%d \n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
+			int write_hdd_time = 0;
+			char *avg = exec_disksim_syssim(1, 0, 0);
+			write_hdd_time += (int)avg * 1;
 			sub->current_time=ssd->current_time+write_hdd_time;
 			sub->begin_time=ssd->current_time+write_hdd_time;
 		}

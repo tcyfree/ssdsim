@@ -2054,98 +2054,133 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].fast_erase = TRUE;
 	//***********************************************
 	free_page=0;
-	int arr[1024],l=0;
-	for(i=0;i<ssd->parameter->page_block;i++)		                                                     /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
+	unsigned times = 0, write_hdd_time = 0;
+	if (ssd->is_sequential == 1)
 	{
-		if ((ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].free_state&PG_SUB)==0x0000000f)
+		int arr[1024], l = 0;
+		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
-			free_page++;
-		}
-		if(free_page!=0)
-		{
-			//printf("\ntoo much free page. \t %d\t .%d\t%d\t%d\t%d\t\n",free_page,channel,chip,die,plane);
-		}
-		int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
-        if(ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0) /*该页是有效页，需要copyback操作*/
-		{
-			location=(struct local * )malloc(sizeof(struct local ));
-			alloc_assert(location,"location");
-			memset(location,0, sizeof(struct local));
-
-			location->channel=channel;
-			location->chip=chip;
-			location->die=die;
-			location->plane=plane;
-			location->block=block;
-			location->page=i;
-			arr[l] = lpn;
-			l++;
-			//修改map信息，设flag.
-            move_page(ssd, location, &transfer_size);                                               /*真实的move_page操作*/
-			page_move_count++;
-
-			free(location);
-			location=NULL;
-		}
-	}
-    //将lpn排序
-   sort(arr,l);
-   int page_num = ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num;
-   int index=0,series[1024*4];
-   int times=0,is_sequential=0;
-   unsigned write_hdd_time = 0;
-   for (i = 0; i < l; i++)
-   {
-		// printf("move_page_lpn: %d  %d\n", arr[i], l);
-		int temp=arr[i];
-		index=0;
-		int j = 0;
-		for (j = arr[i] - 1; j <= page_num; j++)
-		{
-			//有效且非hdd
-			if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0)
+			if ((ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].free_state & PG_SUB) == 0x0000000f)
 			{
-				if (j-temp==1)
+				free_page++;
+			}
+			if (free_page != 0)
+			{
+				// printf("\ntoo much free page. \t %d\t .%d\t%d\t%d\t%d\t\n",free_page,channel,chip,die,plane);
+			}
+			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0) /*该页是有效页，需要copyback操作*/
+			{
+				location = (struct local *)malloc(sizeof(struct local));
+				alloc_assert(location, "location");
+				memset(location, 0, sizeof(struct local));
+
+				location->channel = channel;
+				location->chip = chip;
+				location->die = die;
+				location->plane = plane;
+				location->block = block;
+				location->page = i;
+				arr[l] = lpn;
+				l++;
+				//修改map信息，设flag.
+				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				page_move_count++;
+				free(location);
+				location = NULL;
+			}
+		}
+		//将lpn排序
+		sort(arr, l);
+		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		int index = 0, series[1024 * 4];
+		int is_sequential = 0;
+		//给每个move_page查找顺序块
+		for (i = 0; i < l; i++)
+		{
+			// printf("move_page_lpn: %d  %d\n", arr[i], l);
+			int temp = arr[i];
+			index = 0;
+			int j = 0;
+			for (j = arr[i] - 1; j <= page_num; j++)
+			{
+				//有效且非hdd
+				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0)
 				{
-					series[index]=j;
-					ssd->dram->map->map_entry[j].hdd_flag=1;
-					location = find_location(ssd,ssd->dram->map->map_entry[j].pn);
-					int lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
-					//查找出来的lpn为什么和map里的不一样也？
-					// if (lpn != -1)
-					// {
+					if (j - temp == 1)
+					{
+						series[index] = j;
+						ssd->dram->map->map_entry[j].hdd_flag = 1;
+						location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+						int lpn = ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 						move_page(ssd, location, &transfer_size);
 						times++;
-						is_sequential = 11;
-						//去掉page_move_count++算是减少时间乘数
-						// page_move_count++;
-					// } else {
-					// 	break;
-					// }
-					temp=j;
-					index++;
-					//有可能会很多连续的，所以加个判断限制
-					if (index>=512)
+						page_move_count++;
+						temp = j;
+						index++;
+						//有可能会很多连续的，所以加个判断限制
+						if (index >= 512)
+						{
+							break;
+						}
+					}
+					else
 					{
 						break;
 					}
-				} else {
-					break;
-				}	
+				}
+			}
+			times++; //被查找的page
+			char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+			write_hdd_time += (int)avg * times;
+			if (write_hdd_time < 0)
+			{
+				printf("write_hdd_time:%d\n", write_hdd_time);
+				abort();
+			}
+			times = 0;
+		}
+	}
+	else
+	{
+		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
+		{
+			if ((ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].free_state & PG_SUB) == 0x0000000f)
+			{
+				free_page++;
+			}
+			if (free_page != 0)
+			{
+				// printf("\ntoo much free page. \t %d\t .%d\t%d\t%d\t%d\t\n",free_page,channel,chip,die,plane);
+			}
+			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0) /*该页是有效页，需要copyback操作*/
+			{
+				location = (struct local *)malloc(sizeof(struct local));
+				alloc_assert(location, "location");
+				memset(location, 0, sizeof(struct local));
+				location->channel = channel;
+				location->chip = chip;
+				location->die = die;
+				location->plane = plane;
+				location->block = block;
+				location->page = i;
+				//修改map信息，设flag.
+				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				page_move_count++;
+				times++;
+				free(location);
+				location = NULL;
 			}
 		}
-		//+1是因为之前还有一次
-		times++;
-		char * avg = exec_disksim_syssim(times, is_sequential);
-		write_hdd_time += (int)avg*times;
+		char *avg = exec_disksim_syssim(times, 0, 0); //随机写times次
+		write_hdd_time += (int)avg * times;
 		if (write_hdd_time < 0)
 		{
 			printf("write_hdd_time:%d\n", write_hdd_time);
 			abort();
 		}
-		times = 0;
 	}
-	
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
 	// printf("erase, page_move:%d\n", page_move_count);
