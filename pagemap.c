@@ -2118,7 +2118,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		//将lpn排序
 		sort(arr, l);
 		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
-		int index = 0, series[1024 * 4];
+		int index = 0;
 		int is_sequential = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
@@ -2134,9 +2134,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (j - temp == 1)
 					{
-						series[index] = j;
 						//hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
 						// ssd->dram->map->map_entry[j].hdd_flag = 2;
+						location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 						sequential_page_invalid(ssd, location, &transfer_size);
 						times++;
 						temp = j;
