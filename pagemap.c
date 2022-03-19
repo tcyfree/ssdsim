@@ -1959,8 +1959,8 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
 
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=PG_SUB;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=-1;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 	ssd->moved_page_count++;
@@ -1969,10 +1969,10 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 
 	//修改map信息，设hdd_flag置为hdd标识
 	ssd->dram->map->map_entry[lpn].hdd_flag=1;
-	//pn=0,erase_opration不会擦除有块了（？）
+
 	ssd->dram->map->map_entry[lpn].pn=0;
-	//不能置0，否则没有更新写了
-	// ssd->dram->map->map_entry[lpn].state=0;
+
+	ssd->dram->map->map_entry[lpn].state=0;
 
 	return SUCCESS;
 }
@@ -1998,6 +1998,7 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 
 	ssd->dram->map->map_entry[lpn].hdd_flag=1;
 	ssd->dram->map->map_entry[lpn].pn=0;
+	ssd->dram->map->map_entry[lpn].state=0;
 
 	return SUCCESS;
 }
