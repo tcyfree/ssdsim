@@ -1978,6 +1978,31 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 }
 
 /**
+ * @brief 查找的连续page对应block置为无效
+ * 
+ * @param ssd 
+ * @param location 
+ * @param transfer_size 
+ * @return Status 
+ */
+Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, unsigned int * transfer_size)
+{
+	unsigned int lpn=0, page_num=0,valid_state=0;
+	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
+	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
+
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
+
+	// ssd->dram->map->map_entry[lpn].hdd_flag=1;
+	ssd->dram->map->map_entry[lpn].pn=0;
+
+	return SUCCESS;
+}
+
+/**
  * @brief 排序
  * 
  * @param a 
@@ -2110,13 +2135,14 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					if (j - temp == 1)
 					{
 						series[index] = j;
-						//hdd_flag=2表示联系块，下次读从SSD读取
-						ssd->dram->map->map_entry[j].hdd_flag = 2;
+						//hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
+						// ssd->dram->map->map_entry[j].hdd_flag = 2;
+						sequential_page_valid(ssd, location, &transfer_size);
 						times++;
 						temp = j;
 						index++;
 						//有可能会很多连续的，所以加个判断限制
-						if (index >= 512)
+						if (index >= 64)
 						{
 							break;
 						}
