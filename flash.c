@@ -921,8 +921,9 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->size=size;
 		sub->state=state;
 		sub->begin_time=ssd->current_time;
-		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 		{
+			printf("state:%d\n", state);
 			// 写入hdd的时间
 			int write_hdd_time = 0;
 			char *avg = exec_disksim_syssim(1, 0, 0);
