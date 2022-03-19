@@ -1166,7 +1166,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		ppn=ssd->dram->map->map_entry[lpn].pn;
 		location=find_location(ssd,ppn);
 		//如果是hdd_flag=1,则location.lpn=0(move_page)
-		if(	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn!=lpn && ssd->dram->map->map_entry[lpn].hdd_flag != 1)
+		if(	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn!=lpn && ssd->dram->map->map_entry[lpn].hdd_flag == 0)
 		{
 			printf("\nError %din get_ppn()2\n", ssd->dram->map->map_entry[lpn].hdd_flag);
 		}
@@ -1959,8 +1959,8 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
 
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=PG_SUB;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=-1;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 	ssd->moved_page_count++;
@@ -1991,12 +1991,12 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
 
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=PG_SUB;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=-1;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].free_page_num++;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 
-	ssd->dram->map->map_entry[lpn].hdd_flag=1;
+	ssd->dram->map->map_entry[lpn].hdd_flag=2;
 	ssd->dram->map->map_entry[lpn].pn=0;
 	ssd->dram->map->map_entry[lpn].state=0;
 
@@ -2061,7 +2061,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			block=i;
 		}
 		//如果block是hdd不用做gc
-		if (ssd->dram->map->map_entry[i].hdd_flag == 1)
+		if (ssd->dram->map->map_entry[i].hdd_flag != 0)
 		{
 			return 1;
 		}
@@ -2143,7 +2143,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						temp = j;
 						index++;
 						//有可能会很多连续的，所以加个判断限制
-						if (index >= 64)
+						if (index >= 256)
 						{
 							break;
 						}
