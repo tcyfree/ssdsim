@@ -1079,21 +1079,22 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	}
 
 	active_block=ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].active_block;
+	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].last_write_page++;
 	//查找是否有被提前释放掉的page
-	for (i = 0; i < ssd->parameter->page_block; i++)
-	{
-		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].valid_state == -1)
-		{
-			ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].last_write_page = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].lpn;
-		}
-		else
-		{
-			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].valid_state > 0)
-			{
-				ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].last_write_page++;
-			}
-		}
-	}
+	// for (i = 0; i < ssd->parameter->page_block; i++)
+	// {
+	// 	if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].valid_state == -1)
+	// 	{
+	// 		ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].last_write_page = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].lpn;
+	// 	}
+	// 	else
+	// 	{
+	// 		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].page_head[i].valid_state > 0)
+	// 		{
+	// 			ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[active_block].last_write_page++;
+	// 		}
+	// 	}
+	// }
 
 	//******************************************Modification for turbo_mode*********************************
 	/*
@@ -2009,7 +2010,7 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=-1;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].free_page_num++;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 
 	ssd->dram->map->map_entry[lpn].hdd_flag=2;
 	ssd->dram->map->map_entry[lpn].pn=0;
