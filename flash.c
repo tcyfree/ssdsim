@@ -990,12 +990,28 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		{
 			read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
 			alloc_assert(read_hot, "read_hot");
-			read_hot->num = 1;
-			read_hot->lpn = lpn;
-			ssd->read_hot_queue_length++;
-			read_hot->next = NULL;
-			ssd->read_tail->next = read_hot;
-			ssd->read_tail = read_hot;
+			int flag = 0;
+			//是指针变量所以能修改原队列数据
+			struct read_hot *hot = ssd->read_head;
+			while (hot)
+			{
+				if (hot->lpn == lpn)
+				{
+					hot->num++;
+					flag = 1;
+					break;
+				}
+				hot = hot->next;
+			}
+			if (flag != 1)
+			{
+				read_hot->num = 1;
+				read_hot->lpn = lpn;
+				ssd->read_hot_queue_length++;
+				read_hot->next = NULL;
+				ssd->read_tail->next = read_hot;
+				ssd->read_tail = read_hot;
+			}
 		}
 	}
 }
