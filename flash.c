@@ -878,6 +878,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 				p_ch->subs_r_head=sub;
 				p_ch->subs_r_tail=sub;
 			}
+			record_read_hot(ssd, lpn);
 		}
 		else//flag=1，可以直接利用已经存在的读子请求节点。可以直接设置sub的相关状态标识
 		{
@@ -961,6 +962,42 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 	}
 
 	return sub;
+}
+
+/**
+ * @brief 记录热数据
+ * 
+ * @param ssd 
+ * @param lpn 
+ */
+void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
+{
+	struct read_hot *read_hot = NULL;
+	if (ssd->read_hot_queue_length < 4096)
+	{
+		if (ssd->read_tail == NULL)
+		{
+			ssd->read_queue = (struct read_hot *)malloc(sizeof(struct read_hot));
+			alloc_assert(ssd->read_queue, "ssd->read_queue");
+			ssd->read_queue->num = 1;
+			ssd->read_queue->lpn = lpn;
+			ssd->read_hot_queue_length = 1;
+			ssd->read_queue->next = NULL;
+			ssd->read_tail = ssd->read_queue;
+			ssd->read_head = ssd->read_queue;
+		}
+		else
+		{
+			read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+			alloc_assert(read_hot, "read_hot");
+			read_hot->num = 1;
+			read_hot->lpn = lpn;
+			ssd->read_hot_queue_length++;
+			read_hot->next = NULL;
+			ssd->read_tail->next = read_hot;
+			ssd->read_tail = read_hot;
+		}
+	}
 }
 
 /******************************************************

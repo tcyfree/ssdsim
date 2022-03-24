@@ -284,6 +284,10 @@ struct ssd_info{
 
     struct parameter_value *parameter;   //SSD参数因子
 	struct dram_info *dram;
+	struct read_hot *read_queue;
+	struct read_hot *read_head;
+	struct read_hot *read_tail;
+	unsigned int read_hot_queue_length; //读队列长度
 	struct request *request_queue;       //dynamic request queue，（请求队列的队首指针）
 	struct request *request_tail;	     // the tail of the request queue（请求队列的队尾指针）
 	struct sub_request *subs_w_head;     //当采用全动态分配时，分配是不知道应该挂载哪个channel上，所以先挂在ssd上，等进入process函数时才挂到相应的channel的读请求队列上
@@ -506,6 +510,16 @@ struct sub_request{
 	unsigned int allocated_page_type;   //0 for lsb page, 1 for msb page;
 	//*****************************************
 };//（操作类数据结构之）子请求结构体，用于将请求拆分成子请求
+
+/**
+ * @brief 热数据队列
+ * 
+ */
+struct read_hot{
+	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
+	unsigned int num;                  //次数
+	struct read_hot *next;
+};
 
 
 /***********************************************************************
