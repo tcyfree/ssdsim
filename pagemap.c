@@ -320,7 +320,7 @@ struct ssd_info *pre_process_write_read(struct ssd_info *ssd)
 
 	printf("\n");
 	printf("begin pre_process_write_read.................\n");
-	ssd->tracefile2=fopen("../trace/ts_0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
+	ssd->tracefile2=fopen("../trace/proj_0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
 	if(ssd->tracefile2 == NULL )      /*打开trace文件从中读取请求*/
 	{
 		printf("the trace file2 can't open\n");
@@ -2009,7 +2009,7 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=-1;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 
 	ssd->dram->map->map_entry[lpn].hdd_flag=2;
@@ -2264,7 +2264,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
         //上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
 		printf("write_hdd_time: %d\n", write_hdd_time);
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC) + write_hdd_time;
+		ssd->channel_head[channel].next_state_predict_time = write_hdd_time;
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 

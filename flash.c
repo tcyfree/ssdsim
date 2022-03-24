@@ -896,11 +896,11 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 					printf("read_hdd_time:%d\n", read_hdd_time);
 					abort();
 				}
-				sub->next_state_predict_time=ssd->current_time+1000+read_hdd_time;//下一状态预计时间为当前时间偏移1000等+读hdd时间
-				sub->complete_time=ssd->current_time+1000+read_hdd_time;
+				sub->next_state_predict_time=ssd->current_time+read_hdd_time-ssd->parameter->time_characteristics.tR;//下一状态预计时间为当前时间偏移1000等+读hdd时间
+				sub->complete_time=ssd->current_time+read_hdd_time-ssd->parameter->time_characteristics.tR;
 			} else {
-				sub->next_state_predict_time=ssd->current_time+1000;//下一状态预计时间为当前时间偏移1000等
-				sub->complete_time=ssd->current_time+1000;
+				sub->next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;//下一状态预计时间为当前时间偏移1000等
+				sub->complete_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
 			}
 		}
 	}
@@ -922,19 +922,20 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->size=size;
 		sub->state=state;
 		sub->begin_time=ssd->current_time;
-		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
-		{
-			if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
-			{
-				printf("hdd_flag:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag);
-			}
-			// 写入hdd的时间
-			int write_hdd_time = 0;
-			char *avg = exec_disksim_syssim(1, 0, 0);
-			write_hdd_time += (int)avg * 1;
-			sub->current_time=ssd->current_time+write_hdd_time;
-			sub->begin_time=ssd->current_time+write_hdd_time;
-		}
+		//覆盖写不用管HDD
+		// if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+		// {
+		// 	if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
+		// 	{
+		// 		printf("hdd_flag:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag);
+		// 	}
+		// 	// 写入hdd的时间
+		// 	int write_hdd_time = 0;
+		// 	char *avg = exec_disksim_syssim(1, 0, 0);
+		// 	write_hdd_time += (int)avg * 1;
+		// 	sub->current_time=ssd->current_time+write_hdd_time;
+		// 	sub->begin_time=ssd->current_time+write_hdd_time;
+		// }
 
 		//调用allocate_location()函数为sub分配物理地址
 		//若非ERROR则创建写子请求成功直接返回sub
