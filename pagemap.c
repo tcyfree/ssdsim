@@ -2151,18 +2151,33 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (j - temp == 1)
 					{
-						//hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
-						// ssd->dram->map->map_entry[j].hdd_flag = 2;
-						location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-						sequential_page_invalid(ssd, location, &transfer_size);
-						times++;
-						temp = j;
-						index++;
-						//有可能会很多连续的，所以加个判断限制
-						if (index >= 256)
+						//如果是热数据则不写到HDD
+						struct read_hot *hot = ssd->read_head;
+						int hot_flag = 0;
+						while (hot)
 						{
-							break;
+							if (hot->lpn == j)
+							{
+								hot_flag = 1;
+								break;
+							}
+							hot = hot->next;
 						}
+						// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
+						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
+						if (hot_flag == 0)
+						{
+							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+							sequential_page_invalid(ssd, location, &transfer_size);
+							times++;
+							index++;
+							//有可能会很多连续的，所以加个判断限制
+							if (index >= 256)
+							{
+								break;
+							}
+						}
+						temp = j;
 					}
 					else
 					{
