@@ -964,6 +964,44 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 
 	return sub;
 }
+/**
+ * @brief 查找热度数最低的第一个，删除然后再在最后加上现在的热度数据
+ * 
+ * @param ssd 
+ * @param cold_num 
+ */
+void delete_cold_data(struct ssd_info *ssd, int cold_num)
+{
+	//链表头部的前一个为NULL
+	struct read_hot *pre_read_hot = NULL, *hot = ssd->read_head;
+	int flag = 0;
+	while (hot != NULL)
+	{
+		if (hot->num == cold_num)
+		{
+			// printf("num:%d\n", hot->num);
+			flag = 1;
+			break;
+		}
+		pre_read_hot = hot;
+		hot = hot->next;
+	}
+	//删除第一个冷数据
+	if (flag == 1)
+	{
+		//链表尾部
+		if (hot->next != NULL)
+		{
+			pre_read_hot->next = hot->next;
+		}
+		// printf("delete_cold_data:%d\n", cold_num);
+		free(hot);
+		ssd->read_hot_queue_length--;
+		return;
+	}
+	cold_num ++;
+	delete_cold_data(ssd, cold_num);
+}
 
 /**
  * @brief 记录热数据
@@ -1014,6 +1052,21 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 				ssd->read_tail = read_hot;
 			}
 		}
+	}
+	else
+	{
+		//删除一个热度最低的数据
+		int cold_num = 1;
+		delete_cold_data(ssd, cold_num);
+		//插入新节点到队尾
+		read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+		alloc_assert(read_hot, "read_hot");
+		read_hot->num = 1;
+		read_hot->lpn = lpn;
+		ssd->read_hot_queue_length++;
+		read_hot->next = NULL;
+		ssd->read_tail->next = read_hot;
+		ssd->read_tail = read_hot;
 	}
 }
 
