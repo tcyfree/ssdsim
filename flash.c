@@ -972,31 +972,35 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
  */
 void delete_cold_data(struct ssd_info *ssd, int cold_num)
 {
-	//链表头部的前一个为NULL
-	struct read_hot *pre_read_hot = NULL, *hot = ssd->read_head;
-	int flag = 0;
+    struct read_hot *hot = ssd->read_head;
+    int flag = 0;
 	while (hot != NULL)
 	{
 		if (hot->num == cold_num)
 		{
-			// printf("num:%d\n", hot->num);
 			flag = 1;
 			break;
 		}
-		pre_read_hot = hot;
 		hot = hot->next;
 	}
 	//删除第一个冷数据
 	if (flag == 1)
 	{
-		//链表尾部
-		if (hot->next != NULL)
-		{
-			pre_read_hot->next = hot->next;
-		}
-		// printf("delete_cold_data:%d\n", cold_num);
-		free(hot);
+		struct read_hot *del = hot->next;
+		hot->next = hot->next->next;
+		free(del);
+        // if (pre_read_hot == NULL) {
+        //     hot = hot->next;
+        // }
+		// //链表尾部
+		// if (hot->next != NULL)
+		// {
+		// 	pre_read_hot->next = hot->next;
+		// }
+		// // printf("delete_cold_data:%d\n", cold_num);
+		// free(hot);
 		ssd->read_hot_queue_length--;
+//        abort();
 		return;
 	}
 	cold_num ++;
