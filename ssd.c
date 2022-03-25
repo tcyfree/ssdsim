@@ -85,8 +85,8 @@ int  main(int argc, char* argv[])
 
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0],ssd->parameter->chip_num);//（各channel上chip数量，整个SSD上chip数量）
-	make_aged(ssd);
-	// pre_process_write_read(ssd);
+	// make_aged(ssd);
+	pre_process_write_read(ssd);
 	pre_process_page(ssd); //读请求的预处理函数 页操作请求预处理函数
 	// get_old_zwh(ssd);
 	printf("free_lsb: %d, free_csb: %d, free_msb: %d\n", ssd->free_lsb_count, ssd->free_csb_count, ssd->free_msb_count);
