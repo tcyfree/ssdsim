@@ -885,23 +885,8 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
 			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
 			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
-			//是否从hdd读数据
-			if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
-			{
-				int read_hdd_time=0;
-				char *avg = exec_disksim_syssim(1, 1, 0);
-				read_hdd_time += (int)avg * 1;
-				if (read_hdd_time < 0)
-				{
-					printf("read_hdd_time:%d\n", read_hdd_time);
-					abort();
-				}
-				sub->next_state_predict_time=ssd->current_time+read_hdd_time-ssd->parameter->time_characteristics.tR;//下一状态预计时间为当前时间偏移1000等+读hdd时间
-				sub->complete_time=ssd->current_time+read_hdd_time-ssd->parameter->time_characteristics.tR;
-			} else {
-				sub->next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;//下一状态预计时间为当前时间偏移1000等
-				sub->complete_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
-			}
+			sub->next_state_predict_time=ssd->current_time+1000;//下一状态预计时间为当前时间偏移1000等
+			sub->complete_time=ssd->current_time+1000;
 		}
 	}
 	/*************************************************************************************
@@ -3916,6 +3901,22 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				sub->current_state=SR_R_READ;//状态重新赋值为下一下状态
 				sub->next_state=SR_R_DATA_TRANSFER;
 				sub->next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
+				//是否从HDD读数据
+				unsigned int lpn = ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
+				if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+				{
+					int read_hdd_time = 0;
+					char *avg = exec_disksim_syssim(1, 1, 0);
+					read_hdd_time += (int)avg * 1;
+					if (read_hdd_time < 0)
+					{
+						printf("read_hdd_time:%d\n", read_hdd_time);
+						abort();
+					}
+					sub->next_state_predict_time += read_hdd_time;
+					//还原
+					ssd->dram->map->map_entry[lpn].hdd_flag = 0
+				}
 
 				ssd->channel_head[location->channel].chip_head[location->chip].current_state=CHIP_READ_BUSY;
 				ssd->channel_head[location->channel].chip_head[location->chip].current_time=ssd->current_time;
