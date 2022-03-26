@@ -3915,7 +3915,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 					}
 					sub->next_state_predict_time += read_hdd_time;
 					//还原
-					ssd->dram->map->map_entry[lpn].hdd_flag = 0
+					ssd->dram->map->map_entry[lpn].hdd_flag = 0;
 				}
 
 				ssd->channel_head[location->channel].chip_head[location->chip].current_state=CHIP_READ_BUSY;
