@@ -2176,8 +2176,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							{
 								break;
 							}
-						} else {
-							goto next;
 						}
 						temp = j;
 					}
@@ -2195,7 +2193,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				printf("write_hdd_time:%d\n", write_hdd_time);
 				abort();
 			}
-			next:
 			times = 0;
 		}
 	}
