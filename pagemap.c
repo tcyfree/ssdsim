@@ -2172,7 +2172,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							times++;
 							index++;
 							//有可能会很多连续的，所以加个判断限制
-							if (index >= 8)
+							if (index >= ssd->seq_num)
 							{
 								break;
 							}
