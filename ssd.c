@@ -82,8 +82,9 @@ int  main(int argc, char* argv[])
 	}
 	if (argc == 6)
 	{
-		sscanf(argv[5], "%d", &(ssd->is_sequential));
+		sscanf(argv[4], "%d", &(ssd->seq_num));
 		printf("ssd->seq_num: %d.\n", ssd->seq_num);
+		sscanf(argv[5], "%d", &(ssd->is_sequential));
 		printf("is_sequential: %d.\n", ssd->is_sequential);
 	}
 	printf("Running trace file: %s.\n", ssd->tracefilename);
@@ -1245,6 +1246,8 @@ void statistic_output(struct ssd_info *ssd)
 			}
 		}
 	}
+	FILE * seq_dat;
+	seq_dat = fopen("./seq.dat", "w");
 	struct seq_write *seq = ssd->seq_write_head;
 	while (seq)
 	{
