@@ -2159,6 +2159,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							if (hot->lpn == j)
 							{
 								hot_flag = 1;
+								record_seq_write(ssd, j, 3);
 								break;
 							}
 							hot = hot->next;

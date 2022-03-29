@@ -19,6 +19,94 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include "flash.h"
 #include "ssd.h"
 
+/**
+ * @brief 增加计数
+ * 
+ * @param ssd 
+ * @param opt 
+ */
+void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
+{
+	switch (opt)
+	{
+	case 1:
+		ssd->seq_write_queue->read_num ++;
+		break;
+	case 2:
+		ssd->seq_write_queue->write_num ++;
+		break;
+	case 3:
+		ssd->seq_write_queue->hdd_num ++;
+		break;
+
+	default:
+		break;
+	}
+}
+/**
+ * @brief 记录
+ *
+ * @param ssd
+ * @param lpn
+ * @param opt 1 读 2 写 3 写hdd
+ */
+void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
+{
+	struct seq_write *seq = ssd->seq_write_head;
+	unsigned short exit = 0;
+	while (seq && opt != 3)
+	{
+		if (seq->lpn == lpn)
+		{
+			exit = 1;
+			break;
+		}
+		seq = seq->next;
+	}
+	if (opt != 3 && exit == 0)
+	{
+		return;
+	}
+	
+
+	struct seq_write *seq_write = NULL;
+	if (ssd->seq_write_tail == NULL)
+	{
+		ssd->seq_write_queue = (struct seq_write *)malloc(sizeof(struct seq_write));
+		alloc_assert(ssd->seq_write_queue, "ssd->seq_write_queue");
+		ssd->seq_write_queue->lpn = lpn;
+		opt_seq_write(ssd, opt);
+		ssd->seq_write_queue->next = NULL;
+		ssd->seq_write_tail = ssd->seq_write_queue;
+		ssd->seq_write_head = ssd->seq_write_queue;
+	}
+	else
+	{
+		seq_write = (struct seq_write *)malloc(sizeof(struct seq_write));
+		alloc_assert(seq_write, "seq_write");
+		int flag = 0;
+		struct seq_write *write = ssd->seq_write_head;
+		while (write)
+		{
+			if (write->lpn == lpn)
+			{
+				opt_seq_write(ssd, opt);
+				flag = 1;
+				break;
+			}
+			write = write->next;
+		}
+		if (flag != 1)
+		{
+			opt_seq_write(ssd, opt);
+			seq_write->lpn = lpn;
+			seq_write->next = NULL;
+			ssd->seq_write_tail->next = seq_write;
+			ssd->seq_write_tail = seq_write;
+		}
+	}
+}
+
 /**********************
 *这个函数只作用于写请求
 ***********************/
@@ -879,6 +967,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 				p_ch->subs_r_tail=sub;
 			}
 			record_read_hot(ssd, lpn);
+			record_seq_write(ssd, lpn, 1);
 		}
 		else//flag=1，可以直接利用已经存在的读子请求节点。可以直接设置sub的相关状态标识
 		{
@@ -933,7 +1022,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			sub=NULL;
 			return NULL;
 		}
-
+		record_seq_write(ssd, lpn, 2);
 	}
 
 	//operation既不为READ也不为WRITE，那么说明传入的operation有误，此时需要释放前面动态申请的location且释放sub，打印出错信息并返回NULL。
@@ -1013,6 +1102,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 			ssd->read_queue->next = NULL;
 			ssd->read_tail = ssd->read_queue;
 			ssd->read_head = ssd->read_queue;
+			ssd->read_hot_queue_length++;
 		}
 		else
 		{

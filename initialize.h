@@ -287,6 +287,9 @@ struct ssd_info{
 	struct read_hot *read_queue;
 	struct read_hot *read_head;
 	struct read_hot *read_tail;
+	struct seq_write *seq_write_queue;
+	struct seq_write *seq_write_head;
+	struct seq_write *seq_write_tail;
 	unsigned int read_hot_queue_length; //读队列长度
 	struct request *request_queue;       //dynamic request queue，（请求队列的队首指针）
 	struct request *request_tail;	     // the tail of the request queue（请求队列的队尾指针）
@@ -517,8 +520,20 @@ struct sub_request{
  */
 struct read_hot{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
-	unsigned int num;                  //次数
+	unsigned short num;                  //次数
 	struct read_hot *next;
+};
+
+/**
+ * @brief 被连续写lpn记录
+ * 
+ */
+struct seq_write{
+	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
+	unsigned short read_num;          //读次数
+	unsigned short write_num;          //写次数
+	unsigned short hdd_num;          //写hdd次数
+	struct seq_write *next;
 };
 
 
