@@ -184,6 +184,7 @@ struct ssd_info{
 	unsigned int real_time_subreq;       //记录实时的写请求个数，用在全动态分配时，channel优先的情况
 	int flag;							 //看ssd的各个channel上（也就是整个ssd上）是否有读写子请求，有为0，没有为1
 	int is_sequential;				 //ssd写入hdd是否连续，默认随机
+	int seq_num;				 //连续写入hdd的个数
 	int active_flag;                     //记录主动写是否阻塞，如果发现阻塞，需要将时间向前推进,0表示没有阻塞，1表示被阻塞，需要向前推进时间
 	unsigned int page;
 

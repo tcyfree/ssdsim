@@ -75,9 +75,10 @@ int  main(int argc, char* argv[])
 	sscanf(argv[1], "%d", &sTIMES);
 	sscanf(argv[2], "%d", &speed_up);
 	sscanf(argv[3], "%s", &(ssd->tracefilename));
-	if (argc == 5)
+	sscanf(argv[4], "%s", &(ssd->seq_num));
+	if (argc == 6)
 	{
-		sscanf(argv[4], "%d", &(ssd->is_sequential));
+		sscanf(argv[5], "%d", &(ssd->is_sequential));
 		printf("is_sequential: %d.\n", ssd->is_sequential);
 	}
 	printf("Running trace file: %s.\n", ssd->tracefilename);
