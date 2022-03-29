@@ -1246,16 +1246,16 @@ void statistic_output(struct ssd_info *ssd)
 			}
 		}
 	}
-	FILE * seq_dat;
-	seq_dat = fopen("./seq.dat", "w");
+	FILE * fp;
+	fp = fopen("./seq.dat", "w");
 	struct seq_write *seq = ssd->seq_write_head;
 	while (seq)
 	{
-		fprintf("./seq.dat","lpn: %d read_num: %d write_num: %d hdd_num: %d\n", seq->lpn, seq->read_num, seq->write_num, seq->hdd_num);
+		fprintf(fp,"lpn: %d read_num: %d write_num: %d hdd_num: %d\n", seq->lpn, seq->read_num, seq->write_num, seq->hdd_num);
 		seq = seq->next;
 	}
-	fflush("./seq.dat");
-	fclose("./seq.dat");
+	fflush(fp);
+	fclose(fp);
 
 	fprintf(ssd->outputfile,"\n");
 	fprintf(ssd->outputfile,"\n");
