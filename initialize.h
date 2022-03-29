@@ -521,7 +521,7 @@ struct sub_request{
  */
 struct read_hot{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
-	unsigned int num;                  //次数
+	unsigned long num;                  //次数
 	struct read_hot *next;
 };
 
@@ -531,10 +531,10 @@ struct read_hot{
  */
 struct seq_write{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
-	unsigned int read_num;          //读次数
-	unsigned int write_num;          //写次数
-	unsigned int hdd_num;          //写hdd次数
-	unsigned int hot_num;          //写热数据次数
+	unsigned long read_num;          //读次数
+	unsigned long write_num;          //写次数
+	unsigned long hdd_num;          //写hdd次数
+	unsigned long hot_num;          //写热数据次数
 	struct seq_write *next;
 };
 
