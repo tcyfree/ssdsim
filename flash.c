@@ -38,6 +38,9 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
 	case 3:
 		ssd->seq_write_queue->hdd_num ++;
 		break;
+	case 4:
+		ssd->seq_write_queue->hot_num ++;
+		break;
 
 	default:
 		break;
@@ -48,7 +51,7 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
  *
  * @param ssd
  * @param lpn
- * @param opt 1 读 2 写 3 写hdd
+ * @param opt 1 读 2 写 3 写hdd 4 热数据
  */
 void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 {

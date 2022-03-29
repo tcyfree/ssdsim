@@ -534,6 +534,7 @@ struct seq_write{
 	unsigned int read_num;          //读次数
 	unsigned int write_num;          //写次数
 	unsigned int hdd_num;          //写hdd次数
+	unsigned int hot_num;          //写热数据次数
 	struct seq_write *next;
 };
 
