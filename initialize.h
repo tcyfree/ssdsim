@@ -521,7 +521,7 @@ struct sub_request{
  */
 struct read_hot{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
-	unsigned long num;                  //次数
+	unsigned int num;                  //次数
 	struct read_hot *next;
 };
 

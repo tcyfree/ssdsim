@@ -2234,7 +2234,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				free(location);
 				location = NULL;
-				record_seq_write(ssd, lpn, 3);
 			}
 		}
 	}

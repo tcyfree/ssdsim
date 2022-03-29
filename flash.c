@@ -23,7 +23,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
  * @brief 增加计数
  * 
  * @param ssd 
- * @param opt 
+ * @param opt 1 读 2 写 3 写hdd 4 热数据
  */
 void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
 {
@@ -47,7 +47,7 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
 	}
 }
 /**
- * @brief 记录
+ * @brief 只记录被连续写下去的lpn
  *
  * @param ssd
  * @param lpn
@@ -55,23 +55,11 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
  */
 void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 {
-	struct seq_write *seq = ssd->seq_write_head;
-	unsigned short exit = 0;
-	while (seq && opt != 3)
-	{
-		if (seq->lpn == lpn)
-		{
-			exit = 1;
-			break;
-		}
-		seq = seq->next;
-	}
-	if (opt != 3 && exit == 0)
+	//读、写
+	if (ssd->dram->map->map_entry[lpn].hdd_flag != 2 || opt != 4)
 	{
 		return;
 	}
-	
-
 	struct seq_write *seq_write = NULL;
 	if (ssd->seq_write_tail == NULL)
 	{
