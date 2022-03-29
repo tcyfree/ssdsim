@@ -2076,11 +2076,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			invalid_page=ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num;
 			block=i;
 		}
-		//如果block是hdd不用做gc
-		if (ssd->dram->map->map_entry[i].hdd_flag != 0)
-		{
-			return 1;
-		}
+		// //如果block是hdd不用做gc
+		// if (ssd->dram->map->map_entry[i].hdd_flag != 0)
+		// {
+		// 	return 1;
+		// }
 		
 	}
 	if (block==-1)
