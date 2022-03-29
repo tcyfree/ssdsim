@@ -56,10 +56,11 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
 void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 {
 	//读、写
-	if (ssd->dram->map->map_entry[lpn].hdd_flag != 2 || opt != 4)
+	if (opt != 4)
 	{
 		return;
 	}
+	printf("record_seq_write: %d\n", opt);
 	struct seq_write *seq_write = NULL;
 	if (ssd->seq_write_tail == NULL)
 	{

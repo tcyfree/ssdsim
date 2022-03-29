@@ -1251,7 +1251,7 @@ void statistic_output(struct ssd_info *ssd)
 	struct seq_write *seq = ssd->seq_write_head;
 	while (seq)
 	{
-		fprintf(fp,"lpn: %d read_num: %d write_num: %d hdd_num: %d\n", seq->lpn, seq->read_num, seq->write_num, seq->hdd_num);
+		fprintf(fp,"lpn: %d read_num: %d write_num: %d hdd_num: %d hot_num: %d\n", seq->lpn, seq->read_num, seq->write_num, seq->hdd_num, seq->hot_num);
 		seq = seq->next;
 	}
 	fflush(fp);
