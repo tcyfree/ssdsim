@@ -25,21 +25,28 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
  * @param ssd 
  * @param opt 1 读 2 写 3 写hdd 4 热数据
  */
-void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
+void opt_seq_write(struct seq_write *seq_write, unsigned int opt)
 {
 	switch (opt)
 	{
 	case 1:
-		ssd->seq_write_queue->read_num ++;
+
+		seq_write->read_num++;
+
 		break;
 	case 2:
-		ssd->seq_write_queue->write_num ++;
+		seq_write->write_num++;
+
 		break;
 	case 3:
-		ssd->seq_write_queue->hdd_num ++;
+
+		seq_write->hdd_num++;
+
 		break;
 	case 4:
-		ssd->seq_write_queue->hot_num ++;
+
+		seq_write->hot_num++;
+
 		break;
 
 	default:
@@ -55,19 +62,22 @@ void opt_seq_write(struct ssd_info *ssd, unsigned int opt)
  */
 void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 {
-	//读、写
-	if (opt != 4)
-	{
-		return;
-	}
-	printf("record_seq_write: %d\n", opt);
 	struct seq_write *seq_write = NULL;
 	if (ssd->seq_write_tail == NULL)
 	{
+		if (opt != 4)
+		{
+			return;
+		}
+		printf("0-record_seq_write: %d lpn: %d\n", opt, lpn);
 		ssd->seq_write_queue = (struct seq_write *)malloc(sizeof(struct seq_write));
 		alloc_assert(ssd->seq_write_queue, "ssd->seq_write_queue");
 		ssd->seq_write_queue->lpn = lpn;
-		opt_seq_write(ssd, opt);
+		ssd->seq_write_queue->read_num = 0;
+		ssd->seq_write_queue->write_num = 0;
+		ssd->seq_write_queue->hdd_num = 0;
+		ssd->seq_write_queue->hot_num = 0;
+		opt_seq_write(ssd->seq_write_queue, opt);
 		ssd->seq_write_queue->next = NULL;
 		ssd->seq_write_tail = ssd->seq_write_queue;
 		ssd->seq_write_head = ssd->seq_write_queue;
@@ -82,7 +92,8 @@ void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 		{
 			if (write->lpn == lpn)
 			{
-				opt_seq_write(ssd, opt);
+				printf("2-record_seq_write: %d lpn: %d\n", opt, lpn);
+				opt_seq_write(write, opt);
 				flag = 1;
 				break;
 			}
@@ -90,11 +101,19 @@ void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 		}
 		if (flag != 1)
 		{
-			opt_seq_write(ssd, opt);
+			if (opt != 4)
+			{
+				return;
+			}
+			printf("1-record_seq_write: %d lpn: %d\n", opt, lpn);
+			seq_write->read_num = 0;
+			seq_write->write_num = 0;
+			seq_write->hdd_num = 0;
+			seq_write->hot_num = 0;
 			seq_write->lpn = lpn;
-			seq_write->next = NULL;
+			opt_seq_write(seq_write, opt);
+			seq_write->next = ssd->seq_write_tail->next;
 			ssd->seq_write_tail->next = seq_write;
-			ssd->seq_write_tail = seq_write;
 		}
 	}
 }
