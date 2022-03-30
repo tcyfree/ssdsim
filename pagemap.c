@@ -2266,7 +2266,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
         //上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
 		// printf("write_hdd_time: %d\n", write_hdd_time);
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time + write_hdd_time;
+		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 

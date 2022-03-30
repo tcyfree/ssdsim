@@ -4001,7 +4001,6 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				sub->current_time=ssd->current_time;
 				sub->current_state=SR_R_READ;//状态重新赋值为下一下状态
 				sub->next_state=SR_R_DATA_TRANSFER;
-				sub->next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
 				//是否从HDD读数据
 				unsigned int lpn = ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 				if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
@@ -4014,15 +4013,23 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 						printf("read_hdd_time:%d\n", read_hdd_time);
 						abort();
 					}
-					sub->next_state_predict_time += read_hdd_time;
-					//还原
-					ssd->dram->map->map_entry[lpn].hdd_flag = 0;
+					sub->next_state_predict_time = ssd->current_time + read_hdd_time;
+					
+				}else{
+					sub->next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
 				}
 
 				ssd->channel_head[location->channel].chip_head[location->chip].current_state=CHIP_READ_BUSY;
 				ssd->channel_head[location->channel].chip_head[location->chip].current_time=ssd->current_time;
 				ssd->channel_head[location->channel].chip_head[location->chip].next_state=CHIP_DATA_TRANSFER;
-				ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
+				if (ssd->dram->map->map_entry[lpn].hdd_flag != 0) 
+				{
+					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
+					//还原
+					ssd->dram->map->map_entry[lpn].hdd_flag = 0;
+				} else {
+					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
+				}
 
 				break;
 			}
