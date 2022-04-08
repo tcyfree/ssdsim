@@ -69,7 +69,7 @@ void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 		{
 			return;
 		}
-		printf("0-record_seq_write: %d lpn: %d\n", opt, lpn);
+		// printf("0-record_seq_write: %d lpn: %d\n", opt, lpn);
 		ssd->seq_write_queue = (struct seq_write *)malloc(sizeof(struct seq_write));
 		alloc_assert(ssd->seq_write_queue, "ssd->seq_write_queue");
 		ssd->seq_write_queue->lpn = lpn;
@@ -92,7 +92,7 @@ void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 		{
 			if (write->lpn == lpn)
 			{
-				printf("2-record_seq_write: %d lpn: %d\n", opt, lpn);
+				// printf("2-record_seq_write: %d lpn: %d\n", opt, lpn);
 				opt_seq_write(write, opt);
 				flag = 1;
 				break;
@@ -105,7 +105,7 @@ void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt)
 			{
 				return;
 			}
-			printf("1-record_seq_write: %d lpn: %d\n", opt, lpn);
+			// printf("1-record_seq_write: %d lpn: %d\n", opt, lpn);
 			seq_write->read_num = 0;
 			seq_write->write_num = 0;
 			seq_write->hdd_num = 0;
