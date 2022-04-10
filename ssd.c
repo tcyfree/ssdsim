@@ -34,18 +34,18 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	FILE * temp;
 	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
 	//容器里面执行
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d >> temp.txt", times, is_read, is_sequential);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
-	temp = fopen("../disksim/valid/temp.txt","r");
-	if(temp == NULL )      /*打开trace文件从中读取请求*/
-	{
-		printf("the trace temp can't open\n");
-	}
-	fgets(average, 200, temp);
-	// printf("average: %d\n",average);
-	return atoi(average);
+	// temp = fopen("../disksim/valid/temp.txt","r");
+	// if(temp == NULL )      /*打开trace文件从中读取请求*/
+	// {
+	// 	printf("the trace temp can't open\n");
+	// }
+	// fgets(average, 200, temp);
+	// // printf("average: %d\n",average);
+	// return atoi(average);
 }
 /********************************************************************************************************************************
 1，main函数中initiatio()函数用来初始化ssd,；2，make_aged()函数使SSD成为aged，aged的ssd相当于使用过一段时间的ssd，里面有失效页，
@@ -62,6 +62,15 @@ int  main(int argc, char* argv[])
 	#ifdef DEBUG
 	printf("enter main\n");
 	#endif
+	//统计disksim标准差
+	int times = 0;
+	for (i = 0; i < 100; i++)
+	{
+		times++;
+		exec_disksim_syssim(times, 1, 0);
+	}
+	printf("准备终止程序\n");
+	abort();
 	//顺序读10次
 	average = exec_disksim_syssim(10, 1, 1);
 	printf("average: %d\n",average);
