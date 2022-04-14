@@ -978,7 +978,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 				p_ch->subs_r_tail=sub;
 			}
 			record_read_hot(ssd, lpn);
-			record_seq_write(ssd, lpn, 1);
+			// record_seq_write(ssd, lpn, 1);
 		}
 		else//flag=1，可以直接利用已经存在的读子请求节点。可以直接设置sub的相关状态标识
 		{
@@ -1033,7 +1033,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			sub=NULL;
 			return NULL;
 		}
-		record_seq_write(ssd, lpn, 2);
+		// record_seq_write(ssd, lpn, 2);
 	}
 
 	//operation既不为READ也不为WRITE，那么说明传入的operation有误，此时需要释放前面动态申请的location且释放sub，打印出错信息并返回NULL。

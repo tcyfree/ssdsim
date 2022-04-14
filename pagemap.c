@@ -2127,7 +2127,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				l++;
 				//修改map信息，设flag.
 				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
-				record_seq_write(ssd, lpn, 3);
+				// record_seq_write(ssd, lpn, 3);
 				page_move_count++;
 				free(location);
 				location = NULL;
@@ -2160,7 +2160,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							if (hot->lpn == j)
 							{
 								hot_flag = 1;
-								record_seq_write(ssd, j, 4);
+								// record_seq_write(ssd, j, 4);
 								break;
 							}
 							hot = hot->next;
