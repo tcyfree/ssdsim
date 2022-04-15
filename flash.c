@@ -4003,7 +4003,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				sub->next_state=SR_R_DATA_TRANSFER;
 				//是否从HDD读数据
 				unsigned int lpn = ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
-				if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+				if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 				{
 					int read_hdd_time = 0;
 					char *avg = exec_disksim_syssim(1, 1, 0);
@@ -4022,7 +4022,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				ssd->channel_head[location->channel].chip_head[location->chip].current_state=CHIP_READ_BUSY;
 				ssd->channel_head[location->channel].chip_head[location->chip].current_time=ssd->current_time;
 				ssd->channel_head[location->channel].chip_head[location->chip].next_state=CHIP_DATA_TRANSFER;
-				if (ssd->dram->map->map_entry[lpn].hdd_flag != 0) 
+				if (ssd->dram->map->map_entry[lpn].hdd_flag == 1) 
 				{
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
 					//还原
