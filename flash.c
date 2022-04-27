@@ -4024,31 +4024,56 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				ssd->channel_head[location->channel].chip_head[location->chip].next_state=CHIP_DATA_TRANSFER;
 				if (ssd->dram->map->map_entry[lpn].hdd_flag == 1) 
 				{
+					printf("ssd->dram->map->map_entry[lpn].hdd_flag: %d\n", ssd->dram->map->map_entry[lpn].hdd_flag);
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
-					//还原
-					ssd->dram->map->map_entry[lpn].hdd_flag = 0;
-					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
-					//创建一个回写子请求，将hdd数据写回ssd ==> 然后再还原，并判断是否重复创建相同回写子请求
-					unsigned int state, mask=0, sub_size=0;
-					int target_page_type, random_num;
-					random_num = rand() % 100;
-					if (random_num < ssd->parameter->turbo_mode_factor)
+					//创建一个回写子请求，将hdd数据写回ssd，并判断是否重复创建相同回写子请求 ==> 然后再还原
+					unsigned int ch_i, ch_flag = 0;
+					for (ch_i = 0; i < ssd->parameter->channel_number; ch_i++)
 					{
-						target_page_type = TARGET_LSB;
-					} else if (random_num < ssd->parameter->turbo_mode_factor_2) {
-						target_page_type = TARGET_CSB;
-					} else {
-						target_page_type = TARGET_MSB;
+						printf("ch_i: %d\n", ch_i);
+						struct sub_request *subs_w_head = ssd->channel_head[ch_i].subs_w_head;
+						while (subs_w_head)
+						{
+							printf("s_lpn: %d lpn: %d", subs_w_head->lpn, lpn);
+							if (subs_w_head->lpn == lpn)
+							{
+								ch_flag = 1;
+								printf("lpn:%d\n", lpn);
+								abort();
+								break;
+							}
+							subs_w_head = subs_w_head->next_node;
+						}
 					}
-					if (ssd->parameter->subpage_page == 32)
+					if (ch_flag == 0)
 					{
-						mask = 0xffffffff;
-					} else {
-						mask = ~(0xffffffff << (ssd->parameter->subpage_page));
+						unsigned int state, mask = 0, sub_size = 0;
+						int target_page_type, random_num;
+						random_num = rand() % 100;
+						if (random_num < ssd->parameter->turbo_mode_factor)
+						{
+							target_page_type = TARGET_LSB;
+						}
+						else if (random_num < ssd->parameter->turbo_mode_factor_2)
+						{
+							target_page_type = TARGET_CSB;
+						}
+						else
+						{
+							target_page_type = TARGET_MSB;
+						}
+						if (ssd->parameter->subpage_page == 32)
+						{
+							mask = 0xffffffff;
+						}
+						else
+						{
+							mask = ~(0xffffffff << (ssd->parameter->subpage_page));
+						}
+						state = mask;
+						sub_size = size(state);
+						creat_sub_request(ssd, lpn, sub_size, state, NULL, WRITE, target_page_type);
 					}
-					state = mask;
-					sub_size = size(state);
-					creat_sub_request(ssd, lpn, sub_size, state, NULL, WRITE, target_page_type);
 				} else {
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
 				}
