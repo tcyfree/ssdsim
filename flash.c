@@ -4027,6 +4027,28 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
 					//还原
 					ssd->dram->map->map_entry[lpn].hdd_flag = 0;
+					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
+					//创建一个回写子请求，将hdd数据写回ssd ==> 然后再还原，并判断是否重复创建相同回写子请求
+					unsigned int state, mask=0, sub_size=0;
+					int target_page_type, random_num;
+					random_num = rand() % 100;
+					if (random_num < ssd->parameter->turbo_mode_factor)
+					{
+						target_page_type = TARGET_LSB;
+					} else if (random_num < ssd->parameter->turbo_mode_factor_2) {
+						target_page_type = TARGET_CSB;
+					} else {
+						target_page_type = TARGET_MSB;
+					}
+					if (ssd->parameter->subpage_page == 32)
+					{
+						mask = 0xffffffff;
+					} else {
+						mask = ~(0xffffffff << (ssd->parameter->subpage_page));
+					}
+					state = mask;
+					sub_size = size(state);
+					creat_sub_request(ssd, lpn, sub_size, state, NULL, WRITE, target_page_type);
 				} else {
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time+ssd->parameter->time_characteristics.tR;
 				}
