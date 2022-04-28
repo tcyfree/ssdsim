@@ -4028,21 +4028,21 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
 					//创建一个回写子请求，将hdd数据写回ssd，并判断是否重复创建相同回写子请求
 					unsigned int ch_i, ch_flag = 0;
-					// for (ch_i = 0; ch_i < ssd->parameter->channel_number; ch_i++)
-					// {
-					// 	struct sub_request * subs_w_head = NULL;
-					// 	subs_w_head = ssd->channel_head[ch_i].subs_w_head;
-					// 	while (subs_w_head!=NULL)
-					// 	{
-					// 		if (subs_w_head->lpn == lpn)
-					// 		{
-					// 			ch_flag = 1;
-					// 			printf("subs_w_head->lpn: %d lpn:%d\n", subs_w_head->lpn, lpn);
-					// 			break;
-					// 		}
-					// 		subs_w_head = subs_w_head->next_node;
-					// 	}
-					// }
+					for (ch_i = 0; ch_i < ssd->parameter->channel_number; ch_i++)
+					{
+						struct sub_request * subs_w_head = NULL;
+						subs_w_head = ssd->channel_head[ch_i].subs_w_head;
+						while (subs_w_head!=NULL)
+						{
+							if (subs_w_head->lpn == lpn)
+							{
+								ch_flag = 1;
+								printf("subs_w_head->lpn: %d lpn:%d\n", subs_w_head->lpn, lpn);
+								break;
+							}
+							subs_w_head = subs_w_head->next_node;
+						}
+					}
 					if (ch_flag == 0)
 					{
 						unsigned int state, mask = 0, sub_size = 0;
