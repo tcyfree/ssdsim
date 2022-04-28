@@ -2222,8 +2222,27 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				location->plane = plane;
 				location->block = block;
 				location->page = i;
-				//修改map信息，设flag.
-				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				//如果是热数据则不写到HDD
+				struct read_hot *hot = ssd->read_head;
+				int hot_flag = 0;
+				while (hot)
+				{
+					if (hot->lpn == lpn)
+					{
+						hot_flag = 1;
+						break;
+					}
+					hot = hot->next;
+				}
+				// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
+				//  ssd->dram->map->map_entry[j].hdd_flag = 2;
+				if (hot_flag == 1)
+				{
+					sequential_page_invalid(ssd, location, &transfer_size);
+				} else {
+					//修改map信息，设flag.
+					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				}
 				page_move_count++;
 				char *avg = exec_disksim_syssim(1, 0, 0);
 				write_hdd_time += (int)avg * 1;
