@@ -236,6 +236,9 @@ struct ssd_info{
 	unsigned long read_count;
 	unsigned long program_count;
 	unsigned long erase_count;
+	unsigned long gc_count;
+	unsigned long gc_lpn_count;
+	unsigned long gc_seq_lpn_count;
 	unsigned long direct_erase_count;
 	unsigned long copy_back_count;
 	unsigned long m_plane_read_count;

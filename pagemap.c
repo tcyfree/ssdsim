@@ -2050,6 +2050,7 @@ void sort(int a[], int m)
 ********************************************************************************************************************************************/
 int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
 {
+	ssd->gc_count++;
 	unsigned int i=0,invalid_page=0;
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
@@ -2128,6 +2129,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				//修改map信息，设flag.
 				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 				// record_seq_write(ssd, lpn, 3);
+				ssd->gc_lpn_count++;
 				page_move_count++;
 				free(location);
 				location = NULL;
@@ -2171,6 +2173,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						{
 							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 							sequential_page_invalid(ssd, location, &transfer_size);
+							ssd->gc_seq_lpn_count++;
 							times++;
 							index++;
 							//有可能会很多连续的，所以加个判断限制
@@ -2224,17 +2227,18 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				location->page = i;
 				//修改map信息，设flag.
 				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				ssd->gc_lpn_count++;
 				page_move_count++;
-				char *avg = exec_disksim_syssim(1, 0, 0);
-				write_hdd_time += (int)avg * 1;
-				if (write_hdd_time < 0)
-				{
-					printf("write_hdd_time:%d\n", write_hdd_time);
-					abort();
-				}
 				free(location);
 				location = NULL;
 			}
+		}
+		char *avg = exec_disksim_syssim(page_move_count, 0, 0);
+		write_hdd_time += (int)avg * page_move_count;
+		if (write_hdd_time < 0)
+		{
+			printf("write_hdd_time:%d\n", write_hdd_time);
+			abort();
 		}
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/

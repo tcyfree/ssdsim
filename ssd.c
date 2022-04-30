@@ -1268,6 +1268,9 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"the read operation leaded by un-covered update count: %13d\n",ssd->update_read_count);
 	fprintf(ssd->outputfile,"erase count: %13d\n",ssd->erase_count);
 	fprintf(ssd->outputfile,"direct erase count: %13d\n",ssd->direct_erase_count);
+	fprintf(ssd->outputfile,"gc_count: %13d\n",ssd->gc_count);
+	fprintf(ssd->outputfile,"gc_lpn_count: %13d\n",ssd->gc_lpn_count);
+	fprintf(ssd->outputfile,"gc_seq_lpn_count: %13d\n",ssd->gc_seq_lpn_count);
 	fprintf(ssd->outputfile,"copy back count: %13d\n",ssd->copy_back_count);
 	fprintf(ssd->outputfile,"multi-plane program count: %13d\n",ssd->m_plane_prog_count);
 	fprintf(ssd->outputfile,"multi-plane read count: %13d\n",ssd->m_plane_read_count);
