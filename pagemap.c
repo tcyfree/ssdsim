@@ -2140,6 +2140,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int index = 0;
 		int is_sequential = 0;
+		int sum_seq = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2191,14 +2192,18 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 			}
 			times++; //被查找的page
-			char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
-			write_hdd_time += (int)avg * times;
+			sum_seq +=times;
+			times = 0;
+		}
+		if (sum_seq != 0)
+		{
+			char *avg = exec_disksim_syssim(sum_seq, 0, 1); //顺序写times次
+			write_hdd_time += (int)avg * sum_seq;
 			if (write_hdd_time < 0)
 			{
 				printf("write_hdd_time:%d\n", write_hdd_time);
 				abort();
 			}
-			times = 0;
 		}
 	}
 	else
