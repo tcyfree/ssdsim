@@ -2172,16 +2172,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 						if (hot_flag == 0)
 						{
+							//有可能会很多连续的，所以加个判断限制
+							if (index >= (ssd->seq_num -1))
+							{
+								break;
+							}
 							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 							sequential_page_invalid(ssd, location, &transfer_size);
 							ssd->gc_seq_lpn_count++;
 							times++;
 							index++;
-							//有可能会很多连续的，所以加个判断限制
-							if (index >= ssd->seq_num)
-							{
-								break;
-							}
 						}
 						temp = j;
 					}
@@ -2192,19 +2192,26 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 			}
 			times++; //被查找的page
-			sum_seq +=times;
-			times = 0;
-		}
-		if (sum_seq != 0)
-		{
-			char *avg = exec_disksim_syssim(sum_seq, 0, 1); //顺序写times次
-			write_hdd_time += (int)avg * sum_seq;
+			char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+			write_hdd_time += (int)avg * times;
 			if (write_hdd_time < 0)
 			{
 				printf("write_hdd_time:%d\n", write_hdd_time);
 				abort();
 			}
+			sum_seq +=times;
+			times = 0;
 		}
+		// if (sum_seq != 0)
+		// {
+		// 	char *avg = exec_disksim_syssim(sum_seq, 0, 1); //顺序写times次
+		// 	write_hdd_time += (int)avg * sum_seq;
+		// 	if (write_hdd_time < 0)
+		// 	{
+		// 		printf("write_hdd_time:%d\n", write_hdd_time);
+		// 		abort();
+		// 	}
+		// }
 	}
 	else
 	{
@@ -2236,15 +2243,22 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				page_move_count++;
 				free(location);
 				location = NULL;
+				char *avg = exec_disksim_syssim(1, 0, 0);
+				write_hdd_time += (int)avg * 1;
+				if (write_hdd_time < 0)
+				{
+					printf("write_hdd_time:%d\n", write_hdd_time);
+					abort();
+				}
 			}
 		}
-		char *avg = exec_disksim_syssim(page_move_count, 0, 0);
-		write_hdd_time += (int)avg * page_move_count;
-		if (write_hdd_time < 0)
-		{
-			printf("write_hdd_time:%d\n", write_hdd_time);
-			abort();
-		}
+		// char *avg = exec_disksim_syssim(page_move_count, 0, 0);
+		// write_hdd_time += (int)avg * page_move_count;
+		// if (write_hdd_time < 0)
+		// {
+		// 	printf("write_hdd_time:%d\n", write_hdd_time);
+		// 	abort();
+		// }
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 

@@ -30,22 +30,35 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
  */
 char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
 {
-	char average[1024], command[1024];
-	FILE * temp;
-	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
-	//容器里面执行
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
-	// printf("%s\n", command);
-	int i = system(command);
-	// printf("i: %d\n", i);
-	temp = fopen("../disksim/valid/temp.txt","r");
-	if(temp == NULL )      /*打开trace文件从中读取请求*/
+	// char average[1024], command[1024];
+	// FILE * temp;
+	// // sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
+	// //容器里面执行
+	// sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
+	// // printf("%s\n", command);
+	// int i = system(command);
+	// // printf("i: %d\n", i);
+	// temp = fopen("../disksim/valid/temp.txt","r");
+	// if(temp == NULL )      /*打开trace文件从中读取请求*/
+	// {
+	// 	printf("the trace temp can't open\n");
+	// }
+	// fgets(average, 200, temp);
+	// // printf("average: %d\n",average);
+	// return atoi(average);
+	if (is_read == 0)
 	{
-		printf("the trace temp can't open\n");
+		if (is_sequential == 1)
+		{
+			return (20 + 10*times)*1000000/times;
+		} else {
+			return (10 + 20*times)*1000000/times;
+		}
+		
+	} else {
+		return 25000000;
 	}
-	fgets(average, 200, temp);
-	// printf("average: %d\n",average);
-	return atoi(average);
+	
 }
 /********************************************************************************************************************************
 1，main函数中initiatio()函数用来初始化ssd,；2，make_aged()函数使SSD成为aged，aged的ssd相当于使用过一段时间的ssd，里面有失效页，
@@ -63,7 +76,9 @@ int  main(int argc, char* argv[])
 	printf("enter main\n");
 	#endif
 	//顺序读10次
-	average = exec_disksim_syssim(10, 1, 1);
+	average = exec_disksim_syssim(10, 0, 1);
+	printf("average: %d\n",average);
+	average = exec_disksim_syssim(1, 0, 0);
 	printf("average: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
@@ -1299,6 +1314,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"buffer write miss: %13d\n",ssd->dram->buffer->write_miss_hit);
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
+	fprintf(ssd->outputfile,"%d, %d, %d, %lld, %lld\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);
