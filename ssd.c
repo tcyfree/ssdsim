@@ -1314,7 +1314,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"buffer write miss: %13d\n",ssd->dram->buffer->write_miss_hit);
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
-	fprintf(ssd->outputfile,"%d, %d, %d, %lld, %lld\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
+	fprintf(ssd->outputfile,"%4d, %13d, %13d, %13lld, %13lld\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);
