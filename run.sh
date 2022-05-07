@@ -1,7 +1,8 @@
 #!/bin/sh
 rm -rf out.txt
 
-echo seq_num,gc_count,gc_lpn_count,read_avg,write_avg >> out.txt
+title="seq_num,   gc_count,   gc_lpn_count,   read_avg,    write_avg"
+echo "$title" >> out.txt
 
 ./ssd 1 1 $1   
 cat ex.out | tail -n 1 >> out.txt
