@@ -2148,7 +2148,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			int temp = arr[i];
 			index = 0;
 			int j = 0;
-			for (j = arr[i] - 1; j <= page_num; j++)
+			for (j = arr[i] + 1; j <= page_num; j++)
 			{
 				//有效且非hdd
 				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0)
