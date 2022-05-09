@@ -2246,7 +2246,23 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					//从最小的向上找
 					if (arr_r[j_i] - temp_lpn == 1)
 					{
-						printf("%d %d\n", arr_r[j_i], temp_lpn);
+						//查找当前arr_r[j_i]的page
+						int flag_i = 0;
+						int r_i;
+						for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
+						{
+							if (arr_r[j_i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[r_i].lpn)
+							{
+								flag_i = 1;
+								break;
+							}
+						}
+						//可能提前被move_page：5、4、7、3
+						if (flag_i == 0)
+						{
+							break;
+						}
+						// printf("%d %d\n", arr_r[j_i], temp_lpn);
 						//提前move_page，由于valid_state会变无效，所以不会再进入
 						location = (struct local *)malloc(sizeof(struct local));
 						alloc_assert(location, "location");
@@ -2256,23 +2272,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						location->die = die;
 						location->plane = plane;
 						location->block = block;
-						int r_i;
-						//查找当前arr_r[j_i]的page
-						int flag_i = 0;
-						for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
-						{
-							if (arr_r[j_i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[r_i].lpn)
-							{
-								location->page = r_i;
-								flag_i = 1;
-								break;
-							}
-						}
-						if (flag_i == 0)
-						{
-							printf("not found r_i %d\n", r_i);
-							abort();
-						}
+						location->page = r_i;
 						random_seq_num++;
 						ssd->gc_rand_seq_lpn_count++;
 						move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
