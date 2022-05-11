@@ -2352,6 +2352,13 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else if (i < l_r - 1 && arr_r[i + 1] - arr_r[i] == 1)
 				{
+					//1 3,4,5 7,8
+					if (random_seq_num != 0)
+					{
+						char *avg = exec_disksim_syssim(random_seq_num, 0, 1);
+						write_hdd_time += (int)avg * random_seq_num;
+						random_seq_num = 0;
+					}
 					int page_i;
 					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
