@@ -2227,11 +2227,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 		//将lpn排序
 		sort(arr_r, l_r);
-		int j_i;
-		for (j_i = 0; j_i < l_r; j_i++)
-		{
-			printf("%d %d\n", arr_r[j_i], l_r);
-		}
+		// int j_i;
+		// for (j_i = 0; j_i < l_r; j_i++)
+		// {
+		// 	printf("%d %d\n", arr_r[j_i], l_r);
+		// }
 		//只有一个有效页
 		if (l_r == 1)
 		{
@@ -2271,9 +2271,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			}
 		}
 		//块中有多个有效页
-		for (i = 0; i < (l_r && l_r > 1); i++)
+		int random_seq_num = 0;
+		for (i = 0; i < l_r && l_r > 1; i++)
 		{
-			int random_seq_num = 0;
 			if (i == 0)
 			{
 				if (arr_r[i + 1] - arr_r[i] == 1)
@@ -2410,6 +2410,17 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else
 				{
+					if (random_seq_num != 0)
+					{
+						char *avg = exec_disksim_syssim(random_seq_num, 0, 1);
+						write_hdd_time += (int)avg * random_seq_num;
+						if (write_hdd_time < 0)
+						{
+							printf("write_hdd_time:%d\n", write_hdd_time);
+							abort();
+						}
+						random_seq_num = 0;
+					}
 					int r_i, lpn_flag = 0;
 					for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
 					{
