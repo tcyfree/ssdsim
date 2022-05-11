@@ -2044,6 +2044,37 @@ void sort(int a[], int m)
     }
 }
 
+/**
+ * @brief Get the page_i by lpn 
+ * 
+ * @param ssd 
+ * @param channel 
+ * @param chip 
+ * @param die 
+ * @param plane 
+ * @param block 
+ * @param search_lpn 
+ * @return int 
+ */
+int get_page_i_by_lpn(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane, int block, int search_lpn)
+{
+	int lpn_flag = 0, r_i;
+	for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
+	{
+		if (search_lpn == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[r_i].lpn)
+		{
+			lpn_flag = 1;
+			break;
+		}
+	}
+	if (lpn_flag == 0)
+	{
+		printf("not found lpn %d\n", search_lpn);
+		abort();
+	}
+	return r_i;
+}
+
 /*******************************************************************************************************************************************
 *目标的plane没有可以直接删除的block，需要寻找目标擦除块后在实施擦除操作，用在不能中断的gc操作中，成功删除一个块，返回1，没有删除一个块返回-1
 *在这个函数中，不用考虑目标channel,die是否是空闲的,擦除invalid_page_num最多的block
@@ -2235,20 +2266,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		//只有一个有效页
 		if (l_r == 1)
 		{
-			int j_i, lpn_flag = 0;
-			for (j_i = 0; j_i < ssd->parameter->page_block; j_i++)
-			{
-				if (arr_r[0] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[j_i].lpn)
-				{
-					lpn_flag = 1;
-					break;
-				}
-			}
-			if (lpn_flag == 0)
-			{
-				printf("1not found lpn\n");
-				abort();
-			}
+			int page_i;
+			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[0]);
 			
 			location = (struct local *)malloc(sizeof(struct local));
 			alloc_assert(location, "location");
@@ -2258,17 +2277,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->die = die;
 			location->plane = plane;
 			location->block = block;
-			location->page = j_i;
+			location->page = page_i;
 			move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 			ssd->gc_lpn_count++;
 			page_move_count++;
 			char *avg = exec_disksim_syssim(1, 0, 0);
 			write_hdd_time += (int)avg * 1;
-			if (write_hdd_time < 0)
-			{
-				printf("write_hdd_time:%d\n", write_hdd_time);
-				abort();
-			}
 		}
 		//块中有多个有效页
 		int random_seq_num = 0;
@@ -2278,20 +2292,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			{
 				if (arr_r[i + 1] - arr_r[i] == 1)
 				{
-					int j_i, lpn_flag = 0;
-					for (j_i = 0; j_i < ssd->parameter->page_block; j_i++)
-					{
-						if (arr_r[i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[j_i].lpn)
-						{
-							lpn_flag = 1;
-							break;
-						}
-					}
-					if (lpn_flag == 0)
-					{
-						printf("1not found lpn\n");
-						abort();
-					}
+					int page_i;
+					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
 					alloc_assert(location, "location");
 					memset(location, 0, sizeof(struct local));
@@ -2300,7 +2302,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->die = die;
 					location->plane = plane;
 					location->block = block;
-					location->page = j_i;
+					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					ssd->gc_lpn_count++;
@@ -2309,20 +2311,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else
 				{
-					int r_i, lpn_flag = 0;
-					for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
-					{
-						if (arr_r[i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[r_i].lpn)
-						{
-							lpn_flag = 1;
-							break;
-						}
-					}
-					if (lpn_flag == 0)
-					{
-						printf("2not found lpn %d\n", arr_r[i]);
-						abort();
-					}
+					int page_i;
+					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
 					alloc_assert(location, "location");
 					memset(location, 0, sizeof(struct local));
@@ -2331,37 +2321,20 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->die = die;
 					location->plane = plane;
 					location->block = block;
-					location->page = r_i;
+					location->page = page_i;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					char *avg = exec_disksim_syssim(1, 0, 0);
 					write_hdd_time += (int)avg * 1;
-					if (write_hdd_time < 0)
-					{
-						printf("write_hdd_time:%d\n", write_hdd_time);
-						abort();
-					}
 				}
 			}
 			else
 			{
 				if (arr_r[i] - arr_r[i - 1] == 1)
 				{
-					int j_i, lpn_flag = 0;
-					for (j_i = 0; j_i < ssd->parameter->page_block; j_i++)
-					{
-						if (arr_r[i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[j_i].lpn)
-						{
-							lpn_flag = 1;
-							break;
-						}
-					}
-					if (lpn_flag == 0)
-					{
-						printf("3not found lpn\n");
-						abort();
-					}
+					int page_i;
+					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
 					alloc_assert(location, "location");
 					memset(location, 0, sizeof(struct local));
@@ -2370,7 +2343,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->die = die;
 					location->plane = plane;
 					location->block = block;
-					location->page = j_i;
+					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					ssd->gc_lpn_count++;
@@ -2379,20 +2352,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else if (i < l_r - 1 && arr_r[i + 1] - arr_r[i] == 1)
 				{
-					int j_i, lpn_flag = 0;
-					for (j_i = 0; j_i < ssd->parameter->page_block; j_i++)
-					{
-						if (arr_r[i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[j_i].lpn)
-						{
-							lpn_flag = 1;
-							break;
-						}
-					}
-					if (lpn_flag == 0)
-					{
-						printf("4not found lpn\n");
-						abort();
-					}
+					int page_i;
+					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
 					alloc_assert(location, "location");
 					memset(location, 0, sizeof(struct local));
@@ -2401,7 +2362,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->die = die;
 					location->plane = plane;
 					location->block = block;
-					location->page = j_i;
+					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					ssd->gc_lpn_count++;
@@ -2414,27 +2375,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					{
 						char *avg = exec_disksim_syssim(random_seq_num, 0, 1);
 						write_hdd_time += (int)avg * random_seq_num;
-						if (write_hdd_time < 0)
-						{
-							printf("write_hdd_time:%d\n", write_hdd_time);
-							abort();
-						}
 						random_seq_num = 0;
 					}
-					int r_i, lpn_flag = 0;
-					for (r_i = 0; r_i < ssd->parameter->page_block; r_i++)
-					{
-						if (arr_r[i] == ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[r_i].lpn)
-						{
-							lpn_flag = 1;
-							break;
-						}
-					}
-					if (lpn_flag == 0)
-					{
-						printf("5not found lpn %d\n", arr_r[i]);
-						abort();
-					}
+					int page_i;
+					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
 					alloc_assert(location, "location");
 					memset(location, 0, sizeof(struct local));
@@ -2443,17 +2387,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->die = die;
 					location->plane = plane;
 					location->block = block;
-					location->page = r_i;
+					location->page = page_i;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					char *avg = exec_disksim_syssim(1, 0, 0);
 					write_hdd_time += (int)avg * 1;
-					if (write_hdd_time < 0)
-					{
-						printf("write_hdd_time:%d\n", write_hdd_time);
-						abort();
-					}
 				}
 			}
 		}
