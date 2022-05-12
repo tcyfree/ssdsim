@@ -19,6 +19,10 @@ function runTrace() {
     saveFile2=${saveFile1%%.*}
 
     echo $saveFile2 >> out-batch.txt
+
+    # 读写率
+    cd ../trace-analysis && ./ssd 1  ../trace/$line && cd ../ssdsim && cat ../trace-analysis/trace-analysis.txt >> out-batch.txt
+
     ./ssd 1 1 ../trace/$line   
     cat ex.out | tail -n 1 >> out-batch.txt
 
