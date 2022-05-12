@@ -2,7 +2,6 @@
 rm -rf out-batch.txt
 
 title="seq_num,   gc_count,   gc_lpn_count,   gc_seq_lpn_count,   gc_rand_seq_lpn_count,   read_avg,   write_avg"
-echo "$title" >> out-batch.txt
 
 runList="runList.txt" #runList存放准备运行的trace合集
 
@@ -22,6 +21,8 @@ function runTrace() {
 
     # 读写率
     cd ../trace-analysis && ./ssd 1  ../trace/$line && cd ../ssdsim && cat ../trace-analysis/trace-analysis.txt >> out-batch.txt
+
+    echo "$title" >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line   
     cat ex.out | tail -n 1 >> out-batch.txt
