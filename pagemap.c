@@ -1971,6 +1971,106 @@ int gc_direct_fast_erase(struct ssd_info *ssd,unsigned int channel,unsigned int 
 
 Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * transfer_size)
 {
+	struct local *new_location=NULL;
+	unsigned int free_state=0,valid_state=0;
+	unsigned int lpn=0,old_ppn=0,ppn=0;
+	//printf("state of this block: %d\n",ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].fast_erase);
+
+	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
+	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
+	free_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state;
+	old_ppn=find_ppn(ssd,location->channel,location->chip,location->die,location->plane,location->block,location->page);      /*记录这个有效移动页的ppn，对比map或者额外映射关系中的ppn，进行删除和添加操作*/
+	ppn=get_ppn_for_gc(ssd,location->channel,location->chip,location->die,location->plane);                /*找出来的ppn一定是在发生gc操作的plane中,才能使用copyback操作，为gc操作获取ppn*/
+
+	new_location=find_location(ssd,ppn);                                                                   /*根据新获得的ppn获取new_location*/
+	//printf("MOVE PAGE, lpn:%d, old_ppn:%d, new_ppn:%d, FROM %d,%d,%d,%d,%d,%d TO %d,%d,%d,%d,%d,%d.\n",lpn,old_ppn,ppn,location->channel,location->chip,location->die,location->plane,location->block,location->page,new_location->channel,new_location->chip,new_location->die,new_location->plane,new_location->block,new_location->page);
+	/*
+	if(new_location->channel==location->channel && new_location->chip==location->chip && new_location->die==location->die && new_location->plane==location->plane && new_location->block==location->block){
+		printf("MOVE PAGE WRONG!!! Page is moved to the same block.\n");
+		return FAILURE;
+		}
+	*/
+	if(new_location->block == location->block){
+		printf("Data is moved to the same block!!!!!!\n");
+		return FAILURE;
+		}
+	if ((ssd->parameter->advanced_commands&AD_COPYBACK)==AD_COPYBACK)
+	{
+		printf("Wrong COMMANDS.\n");
+		return FAILURE;
+		if (ssd->parameter->greed_CB_ad==1)                                                                /*贪婪地使用高级命令*/
+		{
+			ssd->copy_back_count++;
+			ssd->gc_copy_back++;
+			while (old_ppn%2!=ppn%2)
+			{
+				ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].free_state=0;
+				ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].lpn=0;
+				ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].valid_state=0;
+				ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].invalid_page_num++;
+
+				free(new_location);
+				new_location=NULL;
+
+				ppn=get_ppn_for_gc(ssd,location->channel,location->chip,location->die,location->plane);    /*找出来的ppn一定是在发生gc操作的plane中，并且满足奇偶地址限制,才能使用copyback操作*/
+				ssd->program_count--;
+				ssd->write_flash_count--;
+				ssd->waste_page_count++;
+			}
+			if(new_location==NULL)
+			{
+				new_location=find_location(ssd,ppn);
+			}
+
+			ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].free_state=free_state;
+			ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].lpn=lpn;
+			ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].valid_state=valid_state;
+		}
+		else
+		{
+			if (old_ppn%2!=ppn%2)
+			{
+				(* transfer_size)+=size(valid_state);
+			}
+			else
+			{
+
+				ssd->copy_back_count++;
+				ssd->gc_copy_back++;
+			}
+		}
+	}
+	else
+	{
+		(* transfer_size)+=size(valid_state);
+	}
+	ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].free_state=free_state;
+	ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].lpn=lpn;
+	ssd->channel_head[new_location->channel].chip_head[new_location->chip].die_head[new_location->die].plane_head[new_location->plane].blk_head[new_location->block].page_head[new_location->page].valid_state=valid_state;
+
+
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
+	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
+	if((location->page)%3==0){
+		ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_lsb_num++;
+		}
+
+	if (old_ppn==ssd->dram->map->map_entry[lpn].pn)                                                     /*修改映射表*/
+	{
+		ssd->dram->map->map_entry[lpn].pn=ppn;
+	}
+	ssd->moved_page_count++;
+
+	free(new_location);
+	new_location=NULL;
+
+	return SUCCESS;
+}
+
+Status adjust_page_hdd(struct ssd_info * ssd, struct local *location, unsigned int * transfer_size)
+{
 	unsigned int lpn=0, page_num=0,valid_state=0;
 	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
 	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
@@ -2158,7 +2258,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				arr[l] = lpn;
 				l++;
 				//修改map信息，设flag.
-				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 				// record_seq_write(ssd, lpn, 3);
 				ssd->gc_lpn_count++;
 				page_move_count++;
@@ -2195,6 +2295,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							{
 								hot_flag = 1;
 								// record_seq_write(ssd, j, 4);
+								move_page(ssd, location, &transfer_size);
 								break;
 							}
 							hot = hot->next;
@@ -2278,7 +2379,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->plane = plane;
 			location->block = block;
 			location->page = page_i;
-			move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+			adjust_page_hdd(ssd, location, &transfer_size);
 			ssd->gc_lpn_count++;
 			page_move_count++;
 			char *avg = exec_disksim_syssim(1, 0, 0);
@@ -2304,7 +2405,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->block = block;
 					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					adjust_page_hdd(ssd, location, &transfer_size);
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					random_seq_num++;
@@ -2322,7 +2423,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->plane = plane;
 					location->block = block;
 					location->page = page_i;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					char *avg = exec_disksim_syssim(1, 0, 0);
@@ -2345,7 +2446,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->block = block;
 					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					random_seq_num++;
@@ -2371,7 +2472,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->block = block;
 					location->page = page_i;
 					ssd->gc_rand_seq_lpn_count++;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					random_seq_num++;
@@ -2395,7 +2496,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->plane = plane;
 					location->block = block;
 					location->page = page_i;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
 					char *avg = exec_disksim_syssim(1, 0, 0);

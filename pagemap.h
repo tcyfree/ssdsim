@@ -45,6 +45,7 @@ unsigned int get_ppn_for_gc(struct ssd_info *ssd,unsigned int channel,unsigned i
 int erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int chip ,unsigned int die,unsigned int plane ,unsigned int block);
 int erase_planes(struct ssd_info * ssd, unsigned int channel, unsigned int chip, unsigned int die1, unsigned int plane1,unsigned int command);
 int move_page(struct ssd_info * ssd, struct local *location,unsigned int * transfer_size);
+int adjust_page_hdd(struct ssd_info * ssd, struct local *location,unsigned int * transfer_size);
 int sequential_page_invalid(struct ssd_info * ssd, struct local *location,unsigned int * transfer_size);
 int gc_for_channel(struct ssd_info *ssd, unsigned int channel);
 int delete_gc_node(struct ssd_info *ssd, unsigned int channel,struct gc_operation *gc_node);
