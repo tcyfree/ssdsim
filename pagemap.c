@@ -1479,7 +1479,8 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 	flag = 0;
 	for(i=0;i<ssd->parameter->page_block;i++)
 	{
-		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0)
+		// hdd_flag !=0 表明可以直接擦除
+		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0 && ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag == 0)
 		{
 			printf("valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
 			printf("hdd_flag: %d lpn: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag, ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn);
@@ -1988,13 +1989,13 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 	ppn=get_ppn_for_gc(ssd,location->channel,location->chip,location->die,location->plane);                /*找出来的ppn一定是在发生gc操作的plane中,才能使用copyback操作，为gc操作获取ppn*/
 
 	new_location=find_location(ssd,ppn);                                                                   /*根据新获得的ppn获取new_location*/
-	//printf("MOVE PAGE, lpn:%d, old_ppn:%d, new_ppn:%d, FROM %d,%d,%d,%d,%d,%d TO %d,%d,%d,%d,%d,%d.\n",lpn,old_ppn,ppn,location->channel,location->chip,location->die,location->plane,location->block,location->page,new_location->channel,new_location->chip,new_location->die,new_location->plane,new_location->block,new_location->page);
-	/*
+	printf("MOVE PAGE, lpn:%d, old_ppn:%d, new_ppn:%d, FROM %d,%d,%d,%d,%d,%d TO %d,%d,%d,%d,%d,%d.\n",lpn,old_ppn,ppn,location->channel,location->chip,location->die,location->plane,location->block,location->page,new_location->channel,new_location->chip,new_location->die,new_location->plane,new_location->block,new_location->page);
+	
 	if(new_location->channel==location->channel && new_location->chip==location->chip && new_location->die==location->die && new_location->plane==location->plane && new_location->block==location->block){
 		printf("MOVE PAGE WRONG!!! Page is moved to the same block.\n");
 		return FAILURE;
 		}
-	*/
+	
 	if(new_location->block == location->block){
 		printf("Data is moved to the same block!!!!!!\n");
 		return FAILURE;
@@ -2255,9 +2256,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				// printf("\ntoo much free page. \t %d\t .%d\t%d\t%d\t%d\t\n",free_page,channel,chip,die,plane);
 			}
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
-			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0) /*该页是有效页，需要copyback操作*/
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
 			{
-				// printf("i: %d lpn:%d \n", i, lpn);
+				printf("i: %d lpn:%d hdd_flag:%d\n", i, lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
 				arr[l] = lpn;
 				l++;
 			}
@@ -2275,9 +2276,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
-			//防止1无效，但2有效的情况
-			if (ssd->dram->map->map_entry[arr[i]].state == 0)
+			//防止1无效，但2有效的情况 或 已经被打包走了
+			if (ssd->dram->map->map_entry[arr[i]].state == 0 || ssd->dram->map->map_entry[arr[i]].hdd_flag != 0)
 			{
+				printf("lpn:%d hdd_flag:%d state:%d\n", arr[i], ssd->dram->map->map_entry[arr[i]].hdd_flag, ssd->dram->map->map_entry[arr[i]].state);
+				// abort();
 				continue;
 			}
 			int temp = arr[i];
@@ -2303,7 +2306,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						int hot_flag = 0;
 						struct local *location_check = NULL;
 						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-						printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
+						// printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
 						while (hot)
 						{
 							if (hot->lpn == j)
