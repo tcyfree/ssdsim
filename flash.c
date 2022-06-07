@@ -4024,6 +4024,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				ssd->channel_head[location->channel].chip_head[location->chip].next_state=CHIP_DATA_TRANSFER;
 				if (ssd->dram->map->map_entry[lpn].hdd_flag == 1) 
 				{
+					// printf("write back hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 					ssd->dram->map->map_entry[lpn].hdd_flag == 0;
 					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=ssd->current_time;
 					//创建一个回写子请求，将hdd数据写回ssd，并判断是否重复创建相同回写子请求

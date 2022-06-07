@@ -1224,6 +1224,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		//逻辑页更新之后，将hdd_flag置为0
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
+			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 	}
@@ -1476,17 +1477,21 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 {
 	unsigned int flag, i;
 	flag = 0;
-	for(i=0;i<ssd->parameter->page_block;i++){
-		if(ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state!=0){
+	for(i=0;i<ssd->parameter->page_block;i++)
+	{
+		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0)
+		{
 			printf("valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
-			printf("hdd_flag: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag);
+			printf("hdd_flag: %d lpn: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag, ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn);
 			flag = 1;
-			}
 		}
-	if(flag==1){
-		printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n",channel, chip, die, plane, block);
+	}
+	if (flag == 1)
+	{
+		printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n", channel, chip, die, plane, block);
+		abort();
 		return FAILURE;
-		}
+	}
 	unsigned int origin_free_page_num, origin_free_lsb_num, origin_free_csb_num, origin_free_msb_num;
 	origin_free_page_num = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].free_page_num;
 	origin_free_lsb_num = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].free_lsb_num;
@@ -2061,6 +2066,9 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 	{
 		ssd->dram->map->map_entry[lpn].pn=ppn;
 	}
+	//如果不被更新写，下一次不做GC
+	// printf("move-page-lpn:%d\n", lpn);
+	ssd->dram->map->map_entry[lpn].hdd_flag = 2;
 	ssd->moved_page_count++;
 
 	free(new_location);
@@ -2089,6 +2097,7 @@ Status adjust_page_hdd(struct ssd_info * ssd, struct local *location, unsigned i
 	ssd->dram->map->map_entry[lpn].pn=0;
 
 	ssd->dram->map->map_entry[lpn].state=0;
+	// printf("adjust-page-lpn:%d %d\n", location->page, lpn);
 
 	return SUCCESS;
 }
@@ -2109,7 +2118,8 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
-	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
+	// 这里应该注释掉吧，其实是有效的页，可以正常访问
+	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 
 	ssd->dram->map->map_entry[lpn].hdd_flag=2;
@@ -2169,8 +2179,9 @@ int get_page_i_by_lpn(struct ssd_info *ssd,unsigned int channel,unsigned int chi
 	}
 	if (lpn_flag == 0)
 	{
-		printf("not found lpn %d\n", search_lpn);
+		printf("r_i:%d lpn:%d\n", -1, search_lpn);
 		abort();
+		r_i = -1;
 	}
 	return r_i;
 }
@@ -2229,6 +2240,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	//***********************************************
 	free_page=0;
 	unsigned times = 0, write_hdd_time = 0;
+	printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
@@ -2245,57 +2257,89 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
 			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0) /*该页是有效页，需要copyback操作*/
 			{
-				location = (struct local *)malloc(sizeof(struct local));
-				alloc_assert(location, "location");
-				memset(location, 0, sizeof(struct local));
-
-				location->channel = channel;
-				location->chip = chip;
-				location->die = die;
-				location->plane = plane;
-				location->block = block;
-				location->page = i;
+				// printf("i: %d lpn:%d \n", i, lpn);
 				arr[l] = lpn;
 				l++;
-				//修改map信息，设flag.
-				adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
-				// record_seq_write(ssd, lpn, 3);
-				ssd->gc_lpn_count++;
-				page_move_count++;
-				free(location);
-				location = NULL;
 			}
 		}
-		//将lpn排序
+		//先将block中有效lpn取出、排序
 		sort(arr, l);
+		// int i = 0;
+		// for (i = 0; i < l; i++)
+		// {
+		// 	printf("arr: %d %d\n", arr[i], l);
+		// }
 		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int index = 0;
 		int is_sequential = 0;
-		int sum_seq = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
-			// printf("move_page_lpn: %d  %d\n", arr[i], l);
+			//防止1无效，但2有效的情况
+			if (ssd->dram->map->map_entry[arr[i]].state == 0)
+			{
+				continue;
+			}
 			int temp = arr[i];
 			index = 0;
-			int j = 0;
-			for (j = arr[i] + 1; j <= page_num; j++)
+			int j = 0, is_seq = 0;
+			for (j = arr[i] + 1; j <= page_num && l > 1; j++)
 			{
+				//有可能会很多连续的，所以加个判断限制
+				if (index >= (ssd->seq_num - 1))
+				{
+					break;
+				}
 				//有效且非hdd
 				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0)
 				{
 					if (j - temp == 1)
 					{
-						//如果是热数据则不写到HDD
+						printf("j:%d\n", j);
+						is_seq = 1;
+						// printf("seq\n");
+						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
 						struct read_hot *hot = ssd->read_head;
 						int hot_flag = 0;
+						struct local *location_check = NULL;
+						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+						printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
 						while (hot)
 						{
 							if (hot->lpn == j)
 							{
+								printf("hot-1\n");
 								hot_flag = 1;
-								// record_seq_write(ssd, j, 4);
-								move_page(ssd, location, &transfer_size);
+								// abort();
+								if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
+								{
+									location = (struct local *)malloc(sizeof(struct local));
+									alloc_assert(location, "location");
+									memset(location, 0, sizeof(struct local));
+									location->channel = channel;
+									location->chip = chip;
+									location->die = die;
+									location->plane = plane;
+									location->block = block;
+									location->page = location_check->page;
+									move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+									ssd->gc_lpn_count++;
+									ssd->gc_seq_lpn_count++;
+									page_move_count++;
+									free(location);
+									location = NULL;
+									free(location_check);
+									location_check = NULL;
+								}
+								else
+								{
+									ssd->gc_seq_lpn_count++;
+									location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+									sequential_page_invalid(ssd, location, &transfer_size);
+								}
+								//热数据也要算到打包数量块里面
+								times++;
+								index++;
 								break;
 							}
 							hot = hot->next;
@@ -2304,14 +2348,41 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 						if (hot_flag == 0)
 						{
-							//有可能会很多连续的，所以加个判断限制
-							if (index >= (ssd->seq_num -1))
+							printf("hot_flag == 0 ");
+							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 							{
-								break;
+								location = (struct local *)malloc(sizeof(struct local));
+								alloc_assert(location, "location");
+								memset(location, 0, sizeof(struct local));
+								location->channel = channel;
+								location->chip = chip;
+								location->die = die;
+								location->plane = plane;
+								location->block = block;
+								int page_i;
+								page_i = get_page_i_by_lpn(ssd, location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, j);
+								if (page_i == -1)
+								{
+									free(location);
+									location = NULL;
+									break;
+								}
+								location->page = location_check->page;
+								adjust_page_hdd(ssd, location, &transfer_size);
+								ssd->gc_lpn_count++;
+								ssd->gc_seq_lpn_count++;
+								page_move_count++;
+								free(location);
+								location = NULL;
+								free(location_check);
+								location_check = NULL;
 							}
-							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-							sequential_page_invalid(ssd, location, &transfer_size);
-							ssd->gc_seq_lpn_count++;
+							else
+							{
+								ssd->gc_seq_lpn_count++;
+								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+								sequential_page_invalid(ssd, location, &transfer_size);
+							}
 							times++;
 							index++;
 						}
@@ -2323,6 +2394,59 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 				}
 			}
+			// 被查找的lpn:arr[i]
+			struct read_hot *hot = ssd->read_head;
+			int hot_flag = 0;
+			location = (struct local *)malloc(sizeof(struct local));
+			alloc_assert(location, "location");
+			memset(location, 0, sizeof(struct local));
+			location->channel = channel;
+			location->chip = chip;
+			location->die = die;
+			location->plane = plane;
+			location->block = block;
+			int page_i;
+			// printf("%d %d %d %d %d\n", channel, chip, die, plane, block);
+			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
+			if (page_i == -1)
+			{
+				free(location);
+				location = NULL;
+				break;
+			}
+			location->page = page_i;
+			while (hot)
+			{
+				if (hot->lpn == arr[i])
+				{
+					printf("hot-0 lpn:%d\n", arr[i]);
+					hot_flag = 1;
+					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+					if (is_seq == 1)
+					{
+						ssd->gc_seq_lpn_count++;
+					}
+					ssd->gc_lpn_count++;
+					page_move_count++;
+					free(location);
+					location = NULL;
+					break;
+				}
+				hot = hot->next;
+			}
+			if (hot_flag == 0)
+			{
+				printf("arr[i]:%d\n", arr[i]);
+				adjust_page_hdd(ssd, location, &transfer_size);
+				if (is_seq == 1)
+				{
+					ssd->gc_seq_lpn_count++;
+				}
+				ssd->gc_lpn_count++;
+				page_move_count++;
+				free(location);
+				location = NULL;
+			}
 			times++; //被查找的page
 			char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
 			write_hdd_time += (int)avg * times;
@@ -2331,19 +2455,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				printf("write_hdd_time:%d\n", write_hdd_time);
 				abort();
 			}
-			sum_seq +=times;
 			times = 0;
 		}
-		// if (sum_seq != 0)
-		// {
-		// 	char *avg = exec_disksim_syssim(sum_seq, 0, 1); //顺序写times次
-		// 	write_hdd_time += (int)avg * sum_seq;
-		// 	if (write_hdd_time < 0)
-		// 	{
-		// 		printf("write_hdd_time:%d\n", write_hdd_time);
-		// 		abort();
-		// 	}
-		// }
 	}
 	else
 	{	
