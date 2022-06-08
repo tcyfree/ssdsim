@@ -1989,7 +1989,7 @@ Status move_page(struct ssd_info * ssd, struct local *location, unsigned int * t
 	ppn=get_ppn_for_gc(ssd,location->channel,location->chip,location->die,location->plane);                /*找出来的ppn一定是在发生gc操作的plane中,才能使用copyback操作，为gc操作获取ppn*/
 
 	new_location=find_location(ssd,ppn);                                                                   /*根据新获得的ppn获取new_location*/
-	printf("MOVE PAGE, lpn:%d, old_ppn:%d, new_ppn:%d, FROM %d,%d,%d,%d,%d,%d TO %d,%d,%d,%d,%d,%d.\n",lpn,old_ppn,ppn,location->channel,location->chip,location->die,location->plane,location->block,location->page,new_location->channel,new_location->chip,new_location->die,new_location->plane,new_location->block,new_location->page);
+	// printf("MOVE PAGE, lpn:%d, old_ppn:%d, new_ppn:%d, FROM %d,%d,%d,%d,%d,%d TO %d,%d,%d,%d,%d,%d.\n",lpn,old_ppn,ppn,location->channel,location->chip,location->die,location->plane,location->block,location->page,new_location->channel,new_location->chip,new_location->die,new_location->plane,new_location->block,new_location->page);
 	
 	if(new_location->channel==location->channel && new_location->chip==location->chip && new_location->die==location->die && new_location->plane==location->plane && new_location->block==location->block){
 		printf("MOVE PAGE WRONG!!! Page is moved to the same block.\n");
@@ -2241,7 +2241,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	//***********************************************
 	free_page=0;
 	unsigned times = 0, write_hdd_time = 0;
-	printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
+	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
@@ -2258,7 +2258,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
 			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
 			{
-				printf("i: %d lpn:%d hdd_flag:%d\n", i, lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
+				// printf("i: %d lpn:%d hdd_flag:%d\n", i, lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
 				arr[l] = lpn;
 				l++;
 			}
@@ -2298,7 +2298,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (j - temp == 1)
 					{
-						printf("j:%d\n", j);
+						// printf("j:%d\n", j);
 						is_seq = 1;
 						// printf("seq\n");
 						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
@@ -2311,7 +2311,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						{
 							if (hot->lpn == j)
 							{
-								printf("hot-1\n");
+								// printf("hot-1\n");
 								hot_flag = 1;
 								// abort();
 								if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
@@ -2351,7 +2351,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 						if (hot_flag == 0)
 						{
-							printf("hot_flag == 0 ");
+							// printf("hot_flag == 0 ");
 							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 							{
 								location = (struct local *)malloc(sizeof(struct local));
@@ -2422,7 +2422,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			{
 				if (hot->lpn == arr[i])
 				{
-					printf("hot-0 lpn:%d\n", arr[i]);
+					// printf("hot-0 lpn:%d\n", arr[i]);
 					hot_flag = 1;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					if (is_seq == 1)
@@ -2439,7 +2439,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			}
 			if (hot_flag == 0)
 			{
-				printf("arr[i]:%d\n", arr[i]);
+				// printf("arr[i]:%d\n", arr[i]);
 				adjust_page_hdd(ssd, location, &transfer_size);
 				if (is_seq == 1)
 				{
