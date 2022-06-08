@@ -2273,6 +2273,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int index = 0;
 		int is_sequential = 0;
+		int random_num = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2298,6 +2299,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (j - temp == 1)
 					{
+						if (random_num != 0)
+						{
+							random_num--;
+							if (random_num != 0)
+							{
+								char *avg = exec_disksim_syssim(random_num, 0, 0);
+								write_hdd_time += (int)avg * random_num;
+								random_num = 0;
+							}
+						}
 						// printf("j:%d\n", j);
 						is_seq = 1;
 						// printf("seq\n");
@@ -2340,9 +2351,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 									location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 									sequential_page_invalid(ssd, location, &transfer_size);
 								}
-								//热数据也要算到打包数量块里面
-								times++;
-								index++;
 								break;
 							}
 							hot = hot->next;
@@ -2386,10 +2394,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 								sequential_page_invalid(ssd, location, &transfer_size);
 							}
-							times++;
-							index++;
 						}
 						temp = j;
+						//热数据也要算到打包数量块里面
+						times++;
+						index++;
 					}
 					else
 					{
@@ -2450,13 +2459,23 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				free(location);
 				location = NULL;
 			}
-			times++; //被查找的page
-			char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
-			write_hdd_time += (int)avg * times;
-			if (write_hdd_time < 0)
+			if (is_seq)
 			{
-				printf("write_hdd_time:%d\n", write_hdd_time);
-				abort();
+				times++; //被查找的page
+			}
+			else
+			{
+				random_num++;
+			}
+			if (times != 0)
+			{
+				char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+				write_hdd_time += (int)avg * times;
+				if (write_hdd_time < 0)
+				{
+					printf("write_hdd_time:%d\n", write_hdd_time);
+					abort();
+				}
 			}
 			times = 0;
 		}
