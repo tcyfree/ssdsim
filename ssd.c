@@ -60,6 +60,34 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	}
 	
 }
+/**
+ * @brief Get the aged ratio object
+ * 
+ * @param ssd 
+ * @return int 
+ */
+int get_aged_ratio(struct ssd_info *ssd){
+	int64_t free_page_num = 0;
+	int cn_id, cp_id, di_id, pl_id;
+	printf("Enter get_aged_ratio.\n");
+	for(cn_id=0;cn_id<ssd->parameter->channel_number;cn_id++){
+		//printf("channel %d\n", cn_id);
+		for(cp_id=0;cp_id<ssd->parameter->chip_channel[0];cp_id++){
+			//printf("chip %d\n", cp_id);
+			for(di_id=0;di_id<ssd->parameter->die_chip;di_id++){
+				//printf("die %d\n", di_id);
+				for(pl_id=0;pl_id<ssd->parameter->plane_die;pl_id++){
+					free_page_num += ssd->channel_head[cn_id].chip_head[cp_id].die_head[di_id].plane_head[pl_id].free_page;
+				}
+			}
+		}
+	}
+	int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num * ssd->parameter->channel_number;
+	printf("page_num:%d\n", page_num);
+	printf("free_page_num:%d\n", free_page_num);
+	printf("aged ratio: %.4f\n", (double)(page_num - free_page_num)/page_num);
+}
+
 /********************************************************************************************************************************
 1，main函数中initiatio()函数用来初始化ssd,；2，make_aged()函数使SSD成为aged，aged的ssd相当于使用过一段时间的ssd，里面有失效页，
 non_aged的ssd是新的ssd，无失效页，失效页的比例可以在初始化参数中设置；3，pre_process_page()函数提前扫一遍读请求，把读请求
@@ -109,7 +137,9 @@ int  main(int argc, char* argv[])
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0],ssd->parameter->chip_num);//（各channel上chip数量，整个SSD上chip数量）
 	// make_aged(ssd);
 	pre_process_write_read(ssd);
+	get_aged_ratio(ssd);
 	pre_process_page(ssd); //读请求的预处理函数 页操作请求预处理函数
+	get_aged_ratio(ssd);
 	// get_old_zwh(ssd);
 	printf("free_lsb: %d, free_csb: %d, free_msb: %d\n", ssd->free_lsb_count, ssd->free_csb_count, ssd->free_msb_count);
 	printf("Total request num: %lld.\n", ssd->total_request_num);
