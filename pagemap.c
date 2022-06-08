@@ -2503,12 +2503,19 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 		//块中有多个有效页
 		int random_seq_num = 0;
+		int random_num = 0; //非连续个数，用于一次性写入hdd
 		for (i = 0; i < l_r && l_r > 1; i++)
 		{
 			if (i == 0)
 			{
 				if (arr_r[i + 1] - arr_r[i] == 1)
 				{
+					if (random_num != 0)
+					{
+						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						write_hdd_time += (int)avg * random_num;
+						random_num = 0;
+					}
 					int page_i;
 					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
@@ -2542,14 +2549,19 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
-					char *avg = exec_disksim_syssim(1, 0, 0);
-					write_hdd_time += (int)avg * 1;
+					random_num++;
 				}
 			}
 			else
 			{
 				if (arr_r[i] - arr_r[i - 1] == 1)
 				{
+					if (random_num != 0)
+					{
+						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						write_hdd_time += (int)avg * random_num;
+						random_num = 0;
+					}
 					int page_i;
 					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
 					location = (struct local *)malloc(sizeof(struct local));
@@ -2569,6 +2581,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else if (i < l_r - 1 && arr_r[i + 1] - arr_r[i] == 1)
 				{
+					if (random_num != 0)
+					{
+						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						write_hdd_time += (int)avg * random_num;
+						random_num = 0;
+					}
 					//1 3,4,5 7,8
 					if (random_seq_num != 0)
 					{
@@ -2615,10 +2633,17 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
 					page_move_count++;
-					char *avg = exec_disksim_syssim(1, 0, 0);
-					write_hdd_time += (int)avg * 1;
+					random_num++;
+					// char *avg = exec_disksim_syssim(1, 0, 0);
+					// write_hdd_time += (int)avg * 1;
 				}
 			}
+		}
+		if (random_num != 0)
+		{
+			char *avg = exec_disksim_syssim(random_num, 0, 0);
+			write_hdd_time += (int)avg * random_num;
+			random_num = 0;
 		}
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
