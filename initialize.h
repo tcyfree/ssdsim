@@ -185,6 +185,8 @@ struct ssd_info{
 	int flag;							 //看ssd的各个channel上（也就是整个ssd上）是否有读写子请求，有为0，没有为1
 	int is_sequential;				 //ssd写入hdd是否连续，默认随机
 	int seq_num;				 //连续写入hdd的个数
+	unsigned int update_write_num;		//写更新数
+	unsigned int seq_lpn_all_num; //块和被查找的lpn个数
 	int active_flag;                     //记录主动写是否阻塞，如果发现阻塞，需要将时间向前推进,0表示没有阻塞，1表示被阻塞，需要向前推进时间
 	unsigned int page;
 
@@ -292,6 +294,9 @@ struct ssd_info{
 	struct read_hot *read_queue;
 	struct read_hot *read_head;
 	struct read_hot *read_tail;
+	struct update_write *update_write_queue;
+	struct update_write *update_write_head;
+	struct update_write *update_write_tail;
 	struct seq_write *seq_write_queue;
 	struct seq_write *seq_write_head;
 	struct seq_write *seq_write_tail;
@@ -527,6 +532,16 @@ struct read_hot{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
 	unsigned int num;                  //次数
 	struct read_hot *next;
+};
+
+/**
+ * @brief 更新写队列
+ * 
+ */
+struct update_write{
+	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
+	unsigned int num;                  //次数
+	struct update_write *next;
 };
 
 /**

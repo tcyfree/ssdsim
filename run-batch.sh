@@ -1,7 +1,8 @@
 #!/bin/bash
 rm -rf out-batch.txt
+rm -rf update-write.csv
 
-title="seq_num,   gc_count,   gc_lpn_count,   gc_seq_lpn_count,   gc_rand_seq_lpn_count,   read_avg,   write_avg"
+title="seq_num,   gc_count,   gc_lpn_count,   gc_seq_lpn_count,   gc_rand_seq_lpn_count,   read_avg,   write_avg,  update_write_ratio"
 
 runList="runList.txt" #runList存放准备运行的trace合集
 

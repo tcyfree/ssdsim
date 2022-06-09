@@ -1302,6 +1302,19 @@ void statistic_output(struct ssd_info *ssd)
 	// fflush(fp);
 	// fclose(fp);
 
+	// 记录更新写了的lpn
+	struct update_write *update_write = ssd->update_write_head;
+	FILE * fp;
+	fp = fopen("./update-write.csv", "a+");
+	fprintf(fp,"%s\n", ssd->tracefilename);
+	while (update_write)
+	{
+		fprintf(fp,"lpn: %11d, num: %d\n", update_write->lpn, update_write->num);
+		update_write = update_write->next;
+	}
+	fflush(fp);
+	fclose(fp);
+
 	fprintf(ssd->outputfile,"\n");
 	fprintf(ssd->outputfile,"\n");
 	fprintf(ssd->outputfile,"---------------------------statistic data---------------------------\n");
@@ -1344,7 +1357,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"buffer write miss: %13d\n",ssd->dram->buffer->write_miss_hit);
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
-	fprintf(ssd->outputfile,"%2d, %13d, %13d, %13d, %20d, %18lld, %18lld\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->gc_seq_lpn_count, ssd->gc_rand_seq_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
+	fprintf(ssd->outputfile,"%2d, %13d, %13d, %13d, %20d, %18lld, %18lld, %.4f\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->gc_seq_lpn_count, ssd->gc_rand_seq_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, (double)ssd->update_write_num/ssd->seq_lpn_all_num);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);

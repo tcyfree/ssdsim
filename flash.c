@@ -1160,6 +1160,54 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	}
 }
 
+/**
+ * @brief 记录更新写
+ * 
+ * @param ssd 
+ * @param lpn 
+ */
+void record_update_write(struct ssd_info *ssd, unsigned int lpn)
+{
+	// printf("recode_update_write lpn:%d\n", lpn);
+	struct update_write *update_write = NULL;
+	if (ssd->update_write_tail == NULL)
+	{
+		ssd->update_write_queue = (struct update_write *)malloc(sizeof(struct update_write));
+		alloc_assert(ssd->update_write_queue, "ssd->update_write_queue");
+		ssd->update_write_queue->num = 1;
+		ssd->update_write_queue->lpn = lpn;
+		ssd->update_write_queue->next = NULL;
+		ssd->update_write_tail = ssd->update_write_queue;
+		ssd->update_write_head = ssd->update_write_queue;
+	}
+	else
+	{
+		update_write = (struct update_write *)malloc(sizeof(struct update_write));
+		alloc_assert(update_write, "update_write");
+		int flag = 0;
+		//是指针变量所以能修改原队列数据
+		struct update_write *update_write_queue = ssd->update_write_head;
+		while (update_write_queue)
+		{
+			if (update_write_queue->lpn == lpn)
+			{
+				update_write_queue->num++;
+				flag = 1;
+				break;
+			}
+			update_write_queue = update_write_queue->next;
+		}
+		if (flag != 1)
+		{
+			update_write->num = 1;
+			update_write->lpn = lpn;
+			update_write->next = NULL;
+			ssd->update_write_tail->next = update_write;
+			ssd->update_write_tail = update_write;
+		}
+	}
+}
+
 /******************************************************
 *函数的功能是在给出的channel，chip，die上面寻找读子请求
 *这个子请求的ppn要与相应的plane的寄存器里面的ppn相符

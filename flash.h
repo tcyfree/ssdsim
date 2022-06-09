@@ -67,6 +67,7 @@ int delete_w_sub_request(struct ssd_info * ssd, unsigned int channel, struct sub
 int copy_back(struct ssd_info * ssd, unsigned int channel, unsigned int chip, unsigned int die,struct sub_request * sub);
 int static_write(struct ssd_info * ssd, unsigned int channel,unsigned int chip, unsigned int die,struct sub_request * sub);
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn);
+void record_update_write(struct ssd_info *ssd, unsigned int lpn);
 void record_seq_write(struct ssd_info *ssd, unsigned int lpn, unsigned int opt);
 
 #endif

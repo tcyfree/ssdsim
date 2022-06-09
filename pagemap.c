@@ -1226,6 +1226,8 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		{
 			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
+			ssd->update_write_num++;
+			record_update_write(ssd, lpn);
 		}
 	}
 
@@ -2280,7 +2282,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			//防止1无效，但2有效的情况 或 已经被打包走了
 			if (ssd->dram->map->map_entry[arr[i]].state == 0 || ssd->dram->map->map_entry[arr[i]].hdd_flag != 0)
 			{
-				printf("lpn:%d hdd_flag:%d state:%d\n", arr[i], ssd->dram->map->map_entry[arr[i]].hdd_flag, ssd->dram->map->map_entry[arr[i]].state);
+				// printf("lpn:%d hdd_flag:%d state:%d\n", arr[i], ssd->dram->map->map_entry[arr[i]].hdd_flag, ssd->dram->map->map_entry[arr[i]].state);
 				// abort();
 				continue;
 			}
@@ -2396,6 +2398,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//热数据也要算到打包数量块里面
 						times++;
 						index++;
+						ssd->seq_lpn_all_num++;
 					}
 					else
 					{
@@ -2403,6 +2406,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 				}
 			}
+			ssd->seq_lpn_all_num++;
 			// 被查找的lpn:arr[i]
 			struct read_hot *hot = ssd->read_head;
 			int hot_flag = 0;
