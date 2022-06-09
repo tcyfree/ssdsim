@@ -1226,8 +1226,11 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		{
 			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
-			ssd->update_write_num++;
-			record_update_write(ssd, lpn);
+			if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
+			{
+				ssd->update_write_num++;
+				record_update_write(ssd, lpn);
+			}
 		}
 	}
 
@@ -2243,7 +2246,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	//***********************************************
 	free_page=0;
 	unsigned times = 0, write_hdd_time = 0;
-	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
+	printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
@@ -2349,6 +2352,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 									ssd->gc_seq_lpn_count++;
 									location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 									sequential_page_invalid(ssd, location, &transfer_size);
+									ssd->seq_lpn_all_num++;
 								}
 								break;
 							}
@@ -2392,13 +2396,13 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 								ssd->gc_seq_lpn_count++;
 								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 								sequential_page_invalid(ssd, location, &transfer_size);
+								ssd->seq_lpn_all_num++;
 							}
 						}
 						temp = j;
 						//热数据也要算到打包数量块里面
 						times++;
 						index++;
-						ssd->seq_lpn_all_num++;
 					}
 					else
 					{
