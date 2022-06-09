@@ -2301,13 +2301,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					{
 						if (random_num != 0)
 						{
-							random_num--;
-							if (random_num != 0)
-							{
-								char *avg = exec_disksim_syssim(random_num, 0, 0);
-								write_hdd_time += (int)avg * random_num;
-								random_num = 0;
-							}
+							// char *avg = exec_disksim_syssim(random_num, 0, 0);
+							char *avg = (char)20000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
+							write_hdd_time += (int)avg * random_num;
+							random_num = 0;
 						}
 						// printf("j:%d\n", j);
 						is_seq = 1;
@@ -2469,6 +2466,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			}
 			if (times != 0)
 			{
+				if (times == 1)
+				{
+					printf("times:%d\n", times);
+					abort();
+				}
 				char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
 				write_hdd_time += (int)avg * times;
 				if (write_hdd_time < 0)
