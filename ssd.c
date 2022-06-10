@@ -82,7 +82,7 @@ int get_aged_ratio(struct ssd_info *ssd){
 			}
 		}
 	}
-	int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num * ssd->parameter->channel_number;
+	int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 	printf("page_num:%d\n", page_num);
 	printf("free_page_num:%d\n", free_page_num);
 	printf("aged ratio: %.4f\n", (double)(page_num - free_page_num)/page_num);
@@ -135,7 +135,9 @@ int  main(int argc, char* argv[])
 
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0],ssd->parameter->chip_num);//（各channel上chip数量，整个SSD上chip数量）
-	// make_aged(ssd);
+	//由于大部分是写少读多，所以老化一部分，更快的GC
+	make_aged(ssd);
+	get_aged_ratio(ssd);
 	pre_process_write_read(ssd);
 	get_aged_ratio(ssd);
 	pre_process_page(ssd); //读请求的预处理函数 页操作请求预处理函数
