@@ -1225,12 +1225,12 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
-			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 			if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
 			{
 				ssd->update_write_num++;
 				record_update_write(ssd, lpn);
 			}
+			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 	}
 
@@ -2352,8 +2352,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 									ssd->gc_seq_lpn_count++;
 									location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 									sequential_page_invalid(ssd, location, &transfer_size);
-									ssd->seq_lpn_all_num++;
 								}
+								ssd->seq_lpn_all_num++;
 								break;
 							}
 							hot = hot->next;
@@ -2410,7 +2410,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 				}
 			}
-			ssd->seq_lpn_all_num++;
 			// 被查找的lpn:arr[i]
 			struct read_hot *hot = ssd->read_head;
 			int hot_flag = 0;
@@ -2448,6 +2447,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					free(location);
 					location = NULL;
 					break;
+					ssd->seq_lpn_all_num++;
 				}
 				hot = hot->next;
 			}
