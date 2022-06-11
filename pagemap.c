@@ -1495,7 +1495,7 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 	if (flag == 1)
 	{
 		printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n", channel, chip, die, plane, block);
-		abort();
+		// abort();
 		return FAILURE;
 	}
 	unsigned int origin_free_page_num, origin_free_lsb_num, origin_free_csb_num, origin_free_msb_num;
@@ -1682,6 +1682,23 @@ Status erase_planes(struct ssd_info * ssd, unsigned int channel, unsigned int ch
 		ssd->channel_head[channel].chip_head[chip].die_head[die1].plane_head[plane1].erase_node=direct_erase_node->next_node;
 		free(direct_erase_node);
 		direct_erase_node=NULL;
+		unsigned int flag, i;
+		flag = 0;
+		for (i = 0; i < ssd->parameter->page_block; i++)
+		{
+			// hdd_flag !=0 表明可以直接擦除
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0)
+			{
+				printf("valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
+				printf("hdd_flag: %d lpn: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag, ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn);
+				flag = 1;
+			}
+		}     
+		if (flag == 1)
+		{
+			printf("NORMAL\n");
+			printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n", channel, chip, die, plane, block);
+		}
 		erase_operation(ssd,channel,chip,die1,plane1,block);
 
 		ssd->direct_erase_count++;
@@ -1795,6 +1812,7 @@ Status fast_erase_planes(struct ssd_info * ssd, unsigned int channel, unsigned i
 *********************************************************************************************************************/
 int gc_direct_erase(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
 {
+	printf("gc_direct_erase\n");
 	unsigned int lv_die=0,lv_plane=0;                                                           /*为避免重名而使用的局部变量 Local variables*/
 	unsigned int interleaver_flag=FALSE,muilt_plane_flag=FALSE;
 	unsigned int normal_erase_flag=TRUE;
@@ -2270,11 +2288,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 		//先将block中有效lpn取出、排序
 		sort(arr, l);
-		// int i = 0;
-		// for (i = 0; i < l; i++)
-		// {
-		// 	printf("arr: %d %d\n", arr[i], l);
-		// }
+		int i = 0;
+		for (i = 0; i < l; i++)
+		{
+			printf("arr: %d %d\n", arr[i], l);
+		}
 		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int index = 0;
 		int is_sequential = 0;
@@ -2311,7 +2329,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							write_hdd_time += (int)avg * random_num;
 							random_num = 0;
 						}
-						// printf("j:%d\n", j);
+						printf("j:%d\n", j);
 						is_seq = 1;
 						// printf("seq\n");
 						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
@@ -2324,7 +2342,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						{
 							if (hot->lpn == j)
 							{
-								// printf("hot-1\n");
+								printf("hot-1\n");
 								hot_flag = 1;
 								// abort();
 								if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
@@ -2362,7 +2380,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 						if (hot_flag == 0)
 						{
-							// printf("hot_flag == 0 ");
+							printf("hot_flag == 0 ");
 							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 							{
 								location = (struct local *)malloc(sizeof(struct local));
@@ -2435,7 +2453,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			{
 				if (hot->lpn == arr[i])
 				{
-					// printf("hot-0 lpn:%d\n", arr[i]);
+					printf("hot-0 lpn:%d\n", arr[i]);
 					hot_flag = 1;
 					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 					if (is_seq == 1)
@@ -2453,7 +2471,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			}
 			if (hot_flag == 0)
 			{
-				// printf("arr[i]:%d\n", arr[i]);
+				printf("arr[i]:%d\n", arr[i]);
 				adjust_page_hdd(ssd, location, &transfer_size);
 				if (is_seq == 1)
 				{
