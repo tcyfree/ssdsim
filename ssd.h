@@ -41,5 +41,5 @@ unsigned int size(unsigned int);
 unsigned int transfer_size(struct ssd_info *,int,unsigned int,struct request *);
 int64_t find_nearest_event(struct ssd_info *);
 void free_all_node(struct ssd_info *);
-struct ssd_info *make_aged(struct ssd_info *, double aged_ratio);
+struct ssd_info *make_aged(struct ssd_info *);
 struct ssd_info *no_buffer_distribute(struct ssd_info *);
