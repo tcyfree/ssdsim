@@ -64,9 +64,9 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
  * @brief Get the aged ratio object
  * 
  * @param ssd 
- * @return int 
+ * @return double
  */
-int get_aged_ratio(struct ssd_info *ssd){
+double get_aged_ratio(struct ssd_info *ssd){
 	int64_t free_page_num = 0;
 	int cn_id, cp_id, di_id, pl_id;
 	printf("Enter get_aged_ratio.\n");
@@ -86,6 +86,7 @@ int get_aged_ratio(struct ssd_info *ssd){
 	printf("page_num:%d\n", page_num);
 	printf("free_page_num:%d\n", free_page_num);
 	printf("aged ratio: %.4f\n", (double)(page_num - free_page_num)/page_num);
+	return (double)(page_num - free_page_num)/page_num;
 }
 
 /********************************************************************************************************************************
@@ -98,6 +99,7 @@ non_aged的ssd是新的ssd，无失效页，失效页的比例可以在初始化
 int  main(int argc, char* argv[])
 {
 	unsigned  int i,j,k;
+	double aged_ratio = 0;
 	struct ssd_info *ssd;
     char *average;
 	#ifdef DEBUG
@@ -135,13 +137,22 @@ int  main(int argc, char* argv[])
 
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0],ssd->parameter->chip_num);//（各channel上chip数量，整个SSD上chip数量）
-	//由于大部分是写少读多，所以老化一部分，更快的GC
-	make_aged(ssd);
-	get_aged_ratio(ssd);
 	pre_process_write_read(ssd);
-	get_aged_ratio(ssd);
+	aged_ratio = get_aged_ratio(ssd);
+	printf("aged-ratio:%.4f\n", aged_ratio);
 	pre_process_page(ssd); //读请求的预处理函数 页操作请求预处理函数
-	get_aged_ratio(ssd);
+	aged_ratio = get_aged_ratio(ssd);
+	printf("aged-ratio:%.4f\n", aged_ratio);
+	//由于大部分是写少读多，所以老化一部分，更快的GC
+	if (aged_ratio < (1 - ssd->parameter->gc_hard_threshold))
+	{
+		double make_aged_ratio = 1 - ssd->parameter->gc_hard_threshold - aged_ratio;
+		printf("make-aged-ratio:%.4f\n", make_aged_ratio);
+		make_aged(ssd, make_aged_ratio);
+		aged_ratio = get_aged_ratio(ssd);
+		printf("aged-ratio:%.4f\n", aged_ratio);
+		// abort();
+	}
 	// get_old_zwh(ssd);
 	printf("free_lsb: %d, free_csb: %d, free_msb: %d\n", ssd->free_lsb_count, ssd->free_csb_count, ssd->free_msb_count);
 	printf("Total request num: %lld.\n", ssd->total_request_num);
@@ -1617,7 +1628,7 @@ void free_all_node(struct ssd_info *ssd)
 *make_aged()函数的作用就是模拟真实的用过一段时间的ssd，
 *那么这个ssd的相应的参数就要改变，所以这个函数实质上就是对ssd中各个参数的赋值。
 ******************************************************************************/
-struct ssd_info *make_aged(struct ssd_info *ssd)
+struct ssd_info *make_aged(struct ssd_info *ssd, double aged_ratio)
 {
 	unsigned int i,j,k,l,m,n,ppn;
 	int threshould,flag=0;
@@ -1625,7 +1636,7 @@ struct ssd_info *make_aged(struct ssd_info *ssd)
 	if (ssd->parameter->aged==1)//aged=1表示要将这个ssd变成aged
 	{
 		//threshold表示一个plane中有多少页需要提前置为失效
-		threshould=(int)(ssd->parameter->block_plane*ssd->parameter->page_block*ssd->parameter->aged_ratio);//plane里的总页数*aged的占比=aged的页数
+		threshould=(int)(ssd->parameter->block_plane*ssd->parameter->page_block*aged_ratio);//plane里的总页数*aged的占比=aged的页数
 		//用多层for循环对整个ssd的有必要的页置为失效
 		for (i=0;i<ssd->parameter->channel_number;i++)
 			for (j=0;j<ssd->parameter->chip_channel[i];j++)
@@ -1639,7 +1650,7 @@ struct ssd_info *make_aged(struct ssd_info *ssd)
 							{
 								break;
 							}
-							for (n=0;n<(ssd->parameter->page_block*ssd->parameter->aged_ratio+1);n++)//若该plane里没有要置为失效的页，则一个页一个页的执行下去
+							for (n=0;n<(ssd->parameter->page_block*aged_ratio+1);n++)//若该plane里没有要置为失效的页，则一个页一个页的执行下去
 							{
 								ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].valid_state=0;        //表示某一页失效，同时标记valid和free状态都为0
 								ssd->channel_head[i].chip_head[j].die_head[k].plane_head[l].blk_head[m].page_head[n].free_state=0;         //表示某一页失效，同时标记valid和free状态都为0
