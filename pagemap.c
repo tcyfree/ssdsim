@@ -2760,31 +2760,31 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// printf("write_hdd_time: %d\n", write_hdd_time);
 
 		//将ssd的并行时间修改为hdd的串行
-		int i;
-		unsigned long serial_diff=0, temp=0;
-		printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld channel:%d\n", ssd->current_time, ssd->channel_head[channel].current_time, ssd->channel_head[channel].next_state_predict_time, channel);
-		for (i = 0; i < ssd->parameter->channel_number; i++)
-		{
-			if (i != channel)
-			{
-				printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld i:%d channel:%d\n", ssd->current_time, ssd->channel_head[i].current_time, ssd->channel_head[i].next_state_predict_time, i, channel);
-				if (ssd->channel_head[i].current_time <= ssd->channel_head[channel].current_time && ssd->channel_head[channel].current_time < ssd->channel_head[i].next_state_predict_time && ssd->channel_head[channel].next_state_predict_time >= ssd->channel_head[i].next_state_predict_time)
-				{
-					temp = ssd->channel_head[i].next_state_predict_time - ssd->channel_head[channel].current_time;
-					if (serial_diff < temp)
-					{
-						serial_diff = temp;
-					}
-					printf("serial_diff:%lld\n", serial_diff);
-					abort();
-				}
-			}
-		}
-		printf("serial_diff2:%lld\n",serial_diff);
-		if (serial_diff != 0)
-		{
-			abort();
-		}
+		// int i;
+		// unsigned long serial_diff=0, temp=0;
+		// printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld channel:%d\n", ssd->current_time, ssd->channel_head[channel].current_time, ssd->channel_head[channel].next_state_predict_time, channel);
+		// for (i = 0; i < ssd->parameter->channel_number; i++)
+		// {
+		// 	if (i != channel)
+		// 	{
+		// 		printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld i:%d channel:%d\n", ssd->current_time, ssd->channel_head[i].current_time, ssd->channel_head[i].next_state_predict_time, i, channel);
+		// 		if (ssd->channel_head[i].current_time <= ssd->channel_head[channel].current_time && ssd->channel_head[channel].current_time < ssd->channel_head[i].next_state_predict_time && ssd->channel_head[channel].next_state_predict_time >= ssd->channel_head[i].next_state_predict_time)
+		// 		{
+		// 			temp = ssd->channel_head[i].next_state_predict_time - ssd->channel_head[channel].current_time;
+		// 			if (serial_diff < temp)
+		// 			{
+		// 				serial_diff = temp;
+		// 			}
+		// 			printf("serial_diff:%lld\n", serial_diff);
+		// 			abort();
+		// 		}
+		// 	}
+		// }
+		// printf("serial_diff2:%lld\n",serial_diff);
+		// if (serial_diff != 0)
+		// {
+		// 	abort();
+		// }
 		
 
 		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
