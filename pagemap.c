@@ -2209,6 +2209,43 @@ int get_page_i_by_lpn(struct ssd_info *ssd,unsigned int channel,unsigned int chi
 	return r_i;
 }
 
+/**
+ * @brief make channel parallel to serial for HDD
+ * 
+ * @param ssd 
+ * @param channel 
+ * @return double 
+ */
+double parallel_to_serial(struct ssd_info *ssd,unsigned int channel)
+{
+	int i;
+	unsigned long serial_diff = 0, temp = 0;
+	printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld channel:%d\n", ssd->current_time, ssd->channel_head[channel].current_time, ssd->channel_head[channel].next_state_predict_time, channel);
+	for (i = 0; i < ssd->parameter->channel_number; i++)
+	{
+		if (i != channel)
+		{
+			printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld i:%d channel:%d\n", ssd->current_time, ssd->channel_head[i].current_time, ssd->channel_head[i].next_state_predict_time, i, channel);
+			if (ssd->channel_head[i].current_time <= ssd->channel_head[channel].current_time && ssd->channel_head[channel].current_time < ssd->channel_head[i].next_state_predict_time && ssd->channel_head[channel].next_state_predict_time >= ssd->channel_head[i].next_state_predict_time)
+			{
+				temp = ssd->channel_head[i].next_state_predict_time - ssd->channel_head[channel].current_time;
+				if (serial_diff < temp)
+				{
+					serial_diff = temp;
+				}
+				printf("serial_diff:%lld\n", serial_diff);
+				abort();
+			}
+		}
+	}
+	printf("serial_diff2:%lld\n", serial_diff);
+	if (serial_diff != 0)
+	{
+		abort();
+	}
+	return serial_diff;
+}
+
 /*******************************************************************************************************************************************
 *目标的plane没有可以直接删除的block，需要寻找目标擦除块后在实施擦除操作，用在不能中断的gc操作中，成功删除一个块，返回1，没有删除一个块返回-1
 *在这个函数中，不用考虑目标channel,die是否是空闲的,擦除invalid_page_num最多的block
@@ -2721,11 +2758,34 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
         //上面这一行+的时间==hdd的写入时间
 		// ssd->channel_head[channel].next_state_predict_time=ssd->scurrent_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
 		// printf("write_hdd_time: %d\n", write_hdd_time);
-		// int i;
-		// for (i = 0; i < ssd->parameter->channel_number; i++)
-		// {
-		// 	printf("channel_current_time:%lld next_time%lld\n", ssd->channel_head[i].current_time, ssd->channel_head[i].next_state_predict_time);
-		// }
+
+		//将ssd的并行时间修改为hdd的串行
+		int i;
+		unsigned long serial_diff=0, temp=0;
+		printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld channel:%d\n", ssd->current_time, ssd->channel_head[channel].current_time, ssd->channel_head[channel].next_state_predict_time, channel);
+		for (i = 0; i < ssd->parameter->channel_number; i++)
+		{
+			if (i != channel)
+			{
+				printf("ssd->current_time:%lld channel_current_time:%lld channel_next_state_predict_time%lld i:%d channel:%d\n", ssd->current_time, ssd->channel_head[i].current_time, ssd->channel_head[i].next_state_predict_time, i, channel);
+				if (ssd->channel_head[i].current_time <= ssd->channel_head[channel].current_time && ssd->channel_head[channel].current_time < ssd->channel_head[i].next_state_predict_time && ssd->channel_head[channel].next_state_predict_time >= ssd->channel_head[i].next_state_predict_time)
+				{
+					temp = ssd->channel_head[i].next_state_predict_time - ssd->channel_head[channel].current_time;
+					if (serial_diff < temp)
+					{
+						serial_diff = temp;
+					}
+					printf("serial_diff:%lld\n", serial_diff);
+					abort();
+				}
+			}
+		}
+		printf("serial_diff2:%lld\n",serial_diff);
+		if (serial_diff != 0)
+		{
+			abort();
+		}
+		
 
 		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
