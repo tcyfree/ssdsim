@@ -36,27 +36,6 @@ function runTrace() {
 
     ./ssd 1 1 ../trace/$line 4 1     
     cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 5 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 6 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 7 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 8 1    
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 9 1    
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 12 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 16 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
    
   done 
 }
