@@ -2144,8 +2144,10 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 	// 这里应该注释掉吧，其实是有效的页，可以正常访问
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
-
-	ssd->dram->map->map_entry[lpn].hdd_flag=2;
+	if (lpn != -1)
+	{
+		ssd->dram->map->map_entry[lpn].hdd_flag=2;
+	}
 	// ssd->dram->map->map_entry[lpn].pn=0;
 	// ssd->dram->map->map_entry[lpn].state=0;
 
