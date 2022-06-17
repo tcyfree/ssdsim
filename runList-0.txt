@@ -9,13 +9,7 @@
 1612-lun3.csv
 1612-lun4.csv
 1612-lun6.csv
-1612_0.csv
-1612_1.csv
-1612_2.csv
-1612_3.csv
 1612_4.csv
-1612_6.csv
-1613-2.csv
 1613-lun0.csv
 1613-lun1.csv
 1613-lun2.csv
@@ -87,14 +81,10 @@ mds_1.csv
 prn_0.csv
 prn_1.csv
 proj_0.csv
-proj_2.csv
 proj_3.csv
 proj_4.csv
-prxy_0.csv
 rsrch_1.csv
 rsrch_2.csv
-src1_0.csv
-src1_1.csv
 src1_2.csv
 src2_1.csv
 src2_2.csv
@@ -104,8 +94,6 @@ stg_1.csv
 ts_0
 ts_0.csv
 usr_0.csv
-usr_1.csv
-usr_2.csv
 wdev_0.csv
 wdev_1.csv
 wdev_2.csv
