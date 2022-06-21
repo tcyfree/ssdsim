@@ -2441,7 +2441,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 								adjust_page_hdd(ssd, location, &transfer_size);
 								ssd->gc_lpn_count++;
 								ssd->gc_seq_lpn_count++;
-								page_move_count++;
 								free(location);
 								location = NULL;
 								free(location_check);
@@ -2499,7 +2498,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						ssd->gc_seq_lpn_count++;
 					}
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					free(location);
 					location = NULL;
 					break;
@@ -2516,7 +2514,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					ssd->gc_seq_lpn_count++;
 				}
 				ssd->gc_lpn_count++;
-				page_move_count++;
 				free(location);
 				location = NULL;
 			}
@@ -2582,7 +2579,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->page = page_i;
 			adjust_page_hdd(ssd, location, &transfer_size);
 			ssd->gc_lpn_count++;
-			page_move_count++;
 			char *avg = exec_disksim_syssim(1, 0, 0);
 			write_hdd_time += (int)avg * 1;
 		}
@@ -2615,7 +2611,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					ssd->gc_rand_seq_lpn_count++;
 					adjust_page_hdd(ssd, location, &transfer_size);
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					random_seq_num++;
 				}
 				else
@@ -2633,7 +2628,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->page = page_i;
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					random_num++;
 				}
 			}
@@ -2661,7 +2655,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					ssd->gc_rand_seq_lpn_count++;
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					random_seq_num++;
 				}
 				else if (i < l_r - 1 && arr_r[i + 1] - arr_r[i] == 1)
@@ -2693,7 +2686,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					ssd->gc_rand_seq_lpn_count++;
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					random_seq_num++;
 				}
 				else
@@ -2717,7 +2709,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					location->page = page_i;
 					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
 					ssd->gc_lpn_count++;
-					page_move_count++;
 					random_num++;
 					// char *avg = exec_disksim_syssim(1, 0, 0);
 					// write_hdd_time += (int)avg * 1;
