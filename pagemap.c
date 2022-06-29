@@ -1687,17 +1687,17 @@ Status erase_planes(struct ssd_info * ssd, unsigned int channel, unsigned int ch
 		for (i = 0; i < ssd->parameter->page_block; i++)
 		{
 			// hdd_flag !=0 表明可以直接擦除
-			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0)
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state != 0 && ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag == 0)
 			{
-				printf("valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
-				printf("hdd_flag: %d lpn: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag, ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn);
+				printf("erase_planes-gc-valid_state: %d\n", ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state);
+				printf("erase_planes-hdd_flag: %d lpn: %d\n", ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag, ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn);
 				flag = 1;
 			}
 		}     
 		if (flag == 1)
 		{
 			printf("NORMAL\n");
-			printf("Erasing a block with valid data: %d, %d, %d, %d, %d.\n", channel, chip, die, plane, block);
+			printf("erase_planes-Erasing a block with valid data: %d, %d, %d, %d, %d.\n", channel, chip, die, plane, block);
 		}
 		erase_operation(ssd,channel,chip,die1,plane1,block);
 

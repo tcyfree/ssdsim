@@ -38,7 +38,7 @@ int get_avg_time(int index, int seq)
     {
         sum_time += seq == 1 ? sequential[i] : rand[i];
     }
-    printf("sum_time:%d", sum_time);
+    // printf("sum_time:%d\n", sum_time);
 
     return (sum_time / index) * 1000;
 }
