@@ -1049,51 +1049,118 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 
 	return sub;
 }
-/**
- * @brief 查找热度数最低的第一个，删除然后再在最后加上现在的热度数据
- * 
- * @param ssd 
- * @param cold_num 
- */
-void delete_cold_data(struct ssd_info *ssd, int cold_num)
-{
-    struct read_hot *hot = ssd->read_head;
-    int flag = 0;
-	while (hot != NULL)
-	{
-		if (hot->num == cold_num)
-		{
-			flag = 1;
-			break;
-		}
-		hot = hot->next;
-	}
-	//删除第一个冷数据
-	if (flag == 1)
-	{
-		struct read_hot *del = hot->next;
-		hot->next = hot->next->next;
-		free(del);
-        // if (pre_read_hot == NULL) {
-        //     hot = hot->next;
-        // }
-		// //链表尾部
-		// if (hot->next != NULL)
-		// {
-		// 	pre_read_hot->next = hot->next;
-		// }
-		// // printf("delete_cold_data:%d\n", cold_num);
-		// free(hot);
-		ssd->read_hot_queue_length--;
-//        abort();
-		return;
-	}
-	cold_num ++;
-	delete_cold_data(ssd, cold_num);
-}
+// /**
+//  * @brief 查找热度数最低的第一个，删除然后再在最后加上现在的热度数据
+//  * 
+//  * @param ssd 
+//  * @param cold_num 
+//  */
+// void delete_cold_data(struct ssd_info *ssd, int cold_num)
+// {
+//     struct read_hot *hot = ssd->read_hot_head;
+//     int flag = 0;
+// 	while (hot != NULL)
+// 	{
+// 		if (hot->num == cold_num)
+// 		{
+// 			flag = 1;
+// 			break;
+// 		}
+// 		hot = hot->next;
+// 	}
+// 	//删除第一个冷数据
+// 	if (flag == 1)
+// 	{
+// 		struct read_hot *del = hot->next;
+// 		hot->next = hot->next->next;
+// 		free(del);
+//         // if (pre_read_hot == NULL) {
+//         //     hot = hot->next;
+//         // }
+// 		// //链表尾部
+// 		// if (hot->next != NULL)
+// 		// {
+// 		// 	pre_read_hot->next = hot->next;
+// 		// }
+// 		// // printf("delete_cold_data:%d\n", cold_num);
+// 		// free(hot);
+// 		ssd->read_hot_queue_length--;
+// //        abort();
+// 		return;
+// 	}
+// 	cold_num ++;
+// 	delete_cold_data(ssd, cold_num);
+// }
+
+// /**
+//  * @brief 记录热数据
+//  * 
+//  * @param ssd 
+//  * @param lpn 
+//  */
+// void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
+// {
+// 	struct read_hot *read_hot = NULL;
+// 	if (ssd->read_hot_queue_length < 4096)
+// 	{
+// 		if (ssd->read_tail == NULL)
+// 		{
+// 			ssd->read_queue = (struct read_hot *)malloc(sizeof(struct read_hot));
+// 			alloc_assert(ssd->read_queue, "ssd->read_queue");
+// 			ssd->read_queue->num = 1;
+// 			ssd->read_queue->lpn = lpn;
+// 			ssd->read_hot_queue_length = 1;
+// 			ssd->read_queue->next = NULL;
+// 			ssd->read_tail = ssd->read_queue;
+// 			ssd->read_hot_head = ssd->read_queue;
+// 		}
+// 		else
+// 		{
+// 			read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+// 			alloc_assert(read_hot, "read_hot");
+// 			int flag = 0;
+// 			//是指针变量所以能修改原队列数据
+// 			struct read_hot *hot = ssd->read_hot_head;
+// 			while (hot)
+// 			{
+// 				if (hot->lpn == lpn)
+// 				{
+// 					hot->num++;
+// 					flag = 1;
+// 					break;
+// 				}
+// 				hot = hot->next;
+// 			}
+// 			if (flag != 1)
+// 			{
+// 				read_hot->num = 1;
+// 				read_hot->lpn = lpn;
+// 				ssd->read_hot_queue_length++;
+// 				read_hot->next = NULL;
+// 				ssd->read_tail->next = read_hot;
+// 				ssd->read_tail = read_hot;
+// 			}
+// 		}
+// 	}
+// 	else
+// 	{
+// 		//删除一个热度最低的数据
+// 		int cold_num = 1;
+// 		delete_cold_data(ssd, cold_num);
+// 		//插入新节点到队尾
+// 		read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+// 		alloc_assert(read_hot, "read_hot");
+// 		read_hot->num = 1;
+// 		read_hot->lpn = lpn;
+// 		ssd->read_hot_queue_length++;
+// 		read_hot->next = NULL;
+// 		ssd->read_tail->next = read_hot;
+// 		ssd->read_tail = read_hot;
+// 	}
+// }
 
 /**
- * @brief 记录热数据
+ * @brief 记录热读数据
  * 
  * @param ssd 
  * @param lpn 
@@ -1101,65 +1168,147 @@ void delete_cold_data(struct ssd_info *ssd, int cold_num)
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 {
 	struct read_hot *read_hot = NULL;
-	if (ssd->read_hot_queue_length < 4096)
+	read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+	alloc_assert(read_hot, "read_hot");
+	if (ssd->read_hot_tail == NULL)
 	{
-		if (ssd->read_tail == NULL)
-		{
-			ssd->read_queue = (struct read_hot *)malloc(sizeof(struct read_hot));
-			alloc_assert(ssd->read_queue, "ssd->read_queue");
-			ssd->read_queue->num = 1;
-			ssd->read_queue->lpn = lpn;
-			ssd->read_hot_queue_length = 1;
-			ssd->read_queue->next = NULL;
-			ssd->read_tail = ssd->read_queue;
-			ssd->read_head = ssd->read_queue;
-			ssd->read_hot_queue_length++;
-		}
-		else
-		{
-			read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
-			alloc_assert(read_hot, "read_hot");
-			int flag = 0;
-			//是指针变量所以能修改原队列数据
-			struct read_hot *hot = ssd->read_head;
-			while (hot)
-			{
-				if (hot->lpn == lpn)
-				{
-					hot->num++;
-					flag = 1;
-					break;
-				}
-				hot = hot->next;
-			}
-			if (flag != 1)
-			{
-				read_hot->num = 1;
-				read_hot->lpn = lpn;
-				ssd->read_hot_queue_length++;
-				read_hot->next = NULL;
-				ssd->read_tail->next = read_hot;
-				ssd->read_tail = read_hot;
-			}
-		}
+		printf("read-1 lpn:%d\n",lpn);
+		read_hot->lpn = lpn;
+		read_hot->next = NULL;
+		ssd->read_hot_tail = read_hot;
+		ssd->read_hot_head = read_hot;
+		ssd->read_hot_queue_length = 1;
 	}
 	else
 	{
-		//删除一个热度最低的数据
-		int cold_num = 1;
-		delete_cold_data(ssd, cold_num);
-		//插入新节点到队尾
-		read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
-		alloc_assert(read_hot, "read_hot");
-		read_hot->num = 1;
-		read_hot->lpn = lpn;
-		ssd->read_hot_queue_length++;
-		read_hot->next = NULL;
-		ssd->read_tail->next = read_hot;
-		ssd->read_tail = read_hot;
+		struct read_hot *hot = ssd->read_hot_head;
+		struct read_hot *pre = NULL;
+		int flag = 0;
+		//该lpn是否已经存在在队了
+		// while (hot)
+		// {
+		// 	printf("hot lpn %d\n", hot->lpn);
+		// 	if (hot->lpn == lpn)
+		// 	{
+		// 		printf("exits lpn:%d\n",lpn);
+		// 		//说明是头
+		// 		if (pre == NULL)
+		// 		{
+		// 			ssd->read_hot_head = ssd->read_hot_head->next; 
+		// 		}else
+		// 		{
+		// 			pre->next = pre->next->next;
+		// 		}
+		// 		//移动到队尾
+		// 		read_hot->lpn = lpn;
+		// 		read_hot->next = NULL;
+		// 		ssd->read_hot_tail->next = read_hot;
+		// 		ssd->read_hot_tail = read_hot;
+		// 		flag = 1;
+		// 		break;
+		// 	}
+		// 	pre = hot;
+		// 	hot = hot->next;
+		// }
+		if (flag == 0)
+		{
+			// printf("new lpn:%d\n",lpn);
+			if (ssd->read_hot_queue_length > 4096)
+			{
+				struct read_hot *temp = NULL;
+				temp = ssd->read_hot_head;
+				// printf("len:%d\n", ssd->read_hot_queue_length);
+				// while (temp)
+				// {
+				// 	printf("lpn:%d\n",temp->lpn);
+				// 	temp = temp->next;
+				// }
+				// printf("delete lpn:%d %d\n",ssd->read_hot_head->lpn,lpn);
+				// abort();
+				temp = ssd->read_hot_head;
+				ssd->read_hot_head = ssd->read_hot_head->next;
+				free(temp);
+			}
+			else
+			{
+				ssd->read_hot_queue_length++;
+			}
+			read_hot->lpn = lpn;
+			read_hot->next = NULL;
+			ssd->read_hot_tail->next = read_hot;
+			ssd->read_hot_tail = read_hot;
+			// printf("new tail lpn:%d\n", ssd->read_hot_tail->lpn);
+		}
 	}
 }
 
+/**
+ * @brief 记录热写数据
+ * 
+ * @param ssd 
+ * @param lpn 
+ */
+void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
+{
+	struct write_hot *write_hot = NULL;
+	if (ssd->write_hot_tail == NULL)
+	{
+		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+		alloc_assert(write_hot, "write_hot");
+		write_hot->lpn = lpn;
+		write_hot->next = NULL;
+		ssd->write_hot_tail = write_hot;
+		ssd->write_hot_head = write_hot;
+		ssd->write_hot_queue_length = 1;
+	}
+	else
+	{
+		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+		alloc_assert(write_hot, "write_hot");
+		struct write_hot *hot = ssd->write_hot_head;
+		struct write_hot *pre = NULL;
+		int flag = 0;
+		//该lpn是否已经存在在队了
+		// while (hot)
+		// {
+		// 	if (hot->lpn == lpn)
+		// 	{
+		// 		//说明是头
+		// 		if (pre == NULL)
+		// 		{
+		// 			ssd->write_hot_head = ssd->write_hot_head->next; 
+		// 		}else
+		// 		{
+		// 			pre->next = pre->next->next;
+		// 		}
+		// 		//移动到队尾
+		// 		ssd->write_hot_tail->next = hot;
+		// 		hot->next = NULL;
+		// 		ssd->write_hot_tail = hot;
+		// 		flag = 1;
+		// 		break;
+		// 	}
+		// 	pre = hot;
+		// 	hot = hot->next;
+		// }
+
+		if (flag == 0)
+		{
+			if (ssd->write_hot_queue_length > 4096)
+			{
+				struct write_hot *temp = NULL;
+				temp = ssd->write_hot_head;
+				ssd->write_hot_head = ssd->write_hot_head->next;
+				free(temp);
+			}
+			write_hot->lpn = lpn;
+			write_hot->next = NULL;
+			ssd->write_hot_tail->next = write_hot;
+			ssd->write_hot_tail = write_hot;
+			ssd->write_hot_queue_length++;
+		}
+	}
+}
 /**
  * @brief 记录更新写
  * 

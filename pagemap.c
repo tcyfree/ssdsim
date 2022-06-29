@@ -2371,7 +2371,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						is_seq = 1;
 						// printf("seq\n");
 						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
-						struct read_hot *hot = ssd->read_head;
+						struct read_hot *hot = ssd->read_hot_head;
 						int hot_flag = 0;
 						struct local *location_check = NULL;
 						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
@@ -2380,7 +2380,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						{
 							if (hot->lpn == j)
 							{
-								// printf("hot-1\n");
+								printf("hot-1 %d\n",j);
 								hot_flag = 1;
 								// abort();
 								if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
@@ -2466,7 +2466,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 			}
 			// 被查找的lpn:arr[i]
-			struct read_hot *hot = ssd->read_head;
+			struct read_hot *hot = ssd->read_hot_head;
 			int hot_flag = 0;
 			location = (struct local *)malloc(sizeof(struct local));
 			alloc_assert(location, "location");

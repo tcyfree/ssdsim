@@ -292,8 +292,10 @@ struct ssd_info{
     struct parameter_value *parameter;   //SSD参数因子
 	struct dram_info *dram;
 	struct read_hot *read_queue;
-	struct read_hot *read_head;
-	struct read_hot *read_tail;
+	struct read_hot *read_hot_head;
+	struct read_hot *read_hot_tail;
+	struct write_hot *write_hot_head;
+	struct write_hot *write_hot_tail;
 	struct update_write *update_write_queue;
 	struct update_write *update_write_head;
 	struct update_write *update_write_tail;
@@ -301,6 +303,7 @@ struct ssd_info{
 	struct seq_write *seq_write_head;
 	struct seq_write *seq_write_tail;
 	unsigned int read_hot_queue_length; //读队列长度
+	unsigned int write_hot_queue_length; //热写队列长度
 	struct request *request_queue;       //dynamic request queue，（请求队列的队首指针）
 	struct request *request_tail;	     // the tail of the request queue（请求队列的队尾指针）
 	struct sub_request *subs_w_head;     //当采用全动态分配时，分配是不知道应该挂载哪个channel上，所以先挂在ssd上，等进入process函数时才挂到相应的channel的读请求队列上
@@ -529,6 +532,16 @@ struct sub_request{
  * 
  */
 struct read_hot{
+	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
+	unsigned int num;                  //次数
+	struct read_hot *next;
+};
+
+/**
+ * @brief 热写据队列
+ * 
+ */
+struct write_hot{
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
 	unsigned int num;                  //次数
 	struct read_hot *next;
