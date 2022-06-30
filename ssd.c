@@ -69,17 +69,32 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	// fgets(average, 200, temp);
 	// // printf("average: %d\n",average);
 	// return atoi(average);
+	// if (is_read == 0)
+	// {
+	// 	if (is_sequential == 1)
+	// 	{
+	// 		return get_avg_time(times,1);
+	// 	} else {
+	// 		return get_avg_time(times,0);
+	// 	}
+		
+	// } else {
+	// 	return 30000000;
+	// }
 	if (is_read == 0)
 	{
 		if (is_sequential == 1)
 		{
-			return get_avg_time(times,1);
-		} else {
-			return get_avg_time(times,0);
+			return (20 + 10 * times) * 1000000 / times;
 		}
-		
-	} else {
-		return 30000000;
+		else
+		{
+			return (10 + 20 * times) * 1000000 / times;
+		}
+	}
+	else
+	{
+		return 25000000;
 	}
 }
 /**

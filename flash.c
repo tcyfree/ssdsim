@@ -1254,7 +1254,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct write_hot *write_hot = NULL;
 	if (ssd->write_hot_tail == NULL)
 	{
-		printf("read-1 lpn:%d\n",lpn);
+		printf("write-1 lpn:%d\n",lpn);
 		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
 		alloc_assert(write_hot, "write_hot");
 		write_hot->lpn = lpn;

@@ -873,7 +873,7 @@ struct ssd_info *get_ppn_lf(struct ssd_info *ssd,unsigned int channel,unsigned i
 		{																				/*如果plane中的free_page的数目少于gc_hard_threshold所设定的阈值就产生gc操作*/
 		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page < (ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->gc_hard_threshold))
 			{
-			//printf("+++++Garbage Collection is NEEDED.\n");
+			printf("+++++Garbage Collection is NEEDED.\n");
 			gc_node=(struct gc_operation *)malloc(sizeof(struct gc_operation));
 			alloc_assert(gc_node,"gc_node");
 			memset(gc_node,0, sizeof(struct gc_operation));
@@ -2248,6 +2248,139 @@ double parallel_to_serial(struct ssd_info *ssd,unsigned int channel)
 	return serial_diff;
 }
 
+/**
+ * @brief Get the block
+ * 
+ * @param ssd 
+ * @param channel 
+ * @param chip 
+ * @param die 
+ * @param plane 
+ * @return int 
+ */
+int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
+{
+	unsigned int i = 0, j = 0, invalid_page = 0, lpn;
+	unsigned int block, active_block; /*记录失效页最多的块号*/
+
+	if (find_active_block(ssd, channel, chip, die, plane) != SUCCESS) /*获取活跃块*/
+	{
+		printf("\n\n Error in uninterrupt_gc().\n");
+		return ERROR;
+	}
+	active_block = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].active_block;
+	// printf("active-block %d\n", active_block);
+	invalid_page = 0;
+	block = -1;
+	//按照不同Page的属性计算每个Block的实际无效页比例系数t，当需要GC时，选择值最大的Block执行GC。
+	int page1, page2, page3, page4;
+	// 第一类是无效的Page，GC时不产生Page move，直接擦除增加SSD的有效空间；
+	// 第二类是之前已经打包写入HDD中的Page，并且该类Page还并未更新，此时可以将其直接擦除，释放有效空间；
+	// 第三类是普通Page，即在GC时直接写入到HDD中，将SSD中的Page擦除，增加SSD的有效空间；
+	// 最后一类是冷写热读的Page，GC时通过Page move保留在SSD中，GC完成后也不增加SSD的有效空间。
+	float t = 0;
+	for (i = 0; i < ssd->parameter->block_plane; i++)
+	{
+		float t_i = 0;
+		if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].free_page_num > 0)
+		{
+			continue;
+		}
+		if ((active_block != i))
+		{
+			page1 = page2 = page3 = page4 = 0;
+			for (j = 0; j < ssd->parameter->page_block; j++)
+			{
+				lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].lpn;
+
+				if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state <= 0)
+				{
+					page1++;
+				}
+				else if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+				{
+					// printf("lpn:%d hdd_flag %d\n", lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
+					page2++;
+				}
+				else
+				{
+					struct read_hot *r_hot_q = ssd->read_hot_head;
+					struct write_hot *w_hot_q = ssd->write_hot_head;
+					int hot_r = 0;
+					int hot_w = 0;
+					//查找热读
+					while (r_hot_q)
+					{
+						if (r_hot_q->lpn == lpn)
+						{
+							hot_r = 1;
+							break;
+						}
+						r_hot_q = r_hot_q->next;
+					}
+					//查找热写
+					while (w_hot_q)
+					{
+						if (w_hot_q->lpn == lpn)
+						{
+							hot_w = 1;
+							break;
+						}
+						w_hot_q = w_hot_q->next;
+					}
+					if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
+					{
+						if (hot_r == 0)
+						{
+							page3++;
+						}
+					}
+					if (hot_r == 1 && hot_w == 0)
+					{
+						page4++;
+					}
+				}
+			}
+			// printf("%d %d %d %d\n", page1, page2, page3, page4);
+			t_i = ((float)page1 + (float)page2 * 0.5 + (float)page3 * 0.25) / (float)(page1 + page2 + page3 + page4);
+			if (t < t_i)
+			{
+				t = t_i;
+				block = i;
+			}
+		}
+	}
+	if (t < 1)
+	{
+		// printf("block %d t %f\n", block, t);
+	}
+	else
+	{
+		printf("t=1 block %d\n", block);
+		int t_b = block;
+		// t = 1
+		for (i = 0; i < ssd->parameter->block_plane; i++) /*查找最多invalid_page的块号，以及最大的invalid_page_num*/
+		{
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].free_page_num > 0)
+			{
+				continue;
+			}
+			if ((active_block != i) && (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num > invalid_page))
+			{
+				invalid_page = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num;
+				block = i;
+			}
+		}
+		if (t_b != block)
+		{
+			printf("t %f t-b %d b %d\n", t, t_b, block);
+			abort();
+		}
+	}
+
+	return block;
+}
+
 /*******************************************************************************************************************************************
 *目标的plane没有可以直接删除的block，需要寻找目标擦除块后在实施擦除操作，用在不能中断的gc操作中，成功删除一个块，返回1，没有删除一个块返回-1
 *在这个函数中，不用考虑目标channel,die是否是空闲的,擦除invalid_page_num最多的block
@@ -2255,39 +2388,14 @@ double parallel_to_serial(struct ssd_info *ssd,unsigned int channel)
 int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane)
 {
 	ssd->gc_count++;
-	unsigned int i=0,invalid_page=0;
+	unsigned int i=0, j=0, invalid_page=0, lpn;
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
 	unsigned int total_invalid_page_num=0;
 
-	if(find_active_block(ssd,channel,chip,die,plane)!=SUCCESS)                                           /*获取活跃块*/
-	{
-		printf("\n\n Error in uninterrupt_gc().\n");
-		return ERROR;
-	}
-	active_block=ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].active_block;
-
-	invalid_page=0;
 	transfer_size=0;
 	block=-1;
-	for(i=0;i<ssd->parameter->block_plane;i++)                                                           /*查找最多invalid_page的块号，以及最大的invalid_page_num*/
-	{
-		total_invalid_page_num+=ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num;
-		if(ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].free_page_num > 0){
-			continue;
-			}
-		if((active_block!=i)&&(ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num>invalid_page))
-		{
-			invalid_page=ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num;
-			block=i;
-		}
-		// //如果block是hdd不用做gc
-		// if (ssd->dram->map->map_entry[i].hdd_flag != 0)
-		// {
-		// 	return 1;
-		// }
-		
-	}
+	block = get_block(ssd, channel, chip, die, plane);
 	if (block==-1)
 	{
 		return 1;
