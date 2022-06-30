@@ -1033,6 +1033,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			sub=NULL;
 			return NULL;
 		}
+		record_write_hot(ssd, lpn);
 		// record_seq_write(ssd, lpn, 2);
 	}
 
@@ -1253,6 +1254,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct write_hot *write_hot = NULL;
 	if (ssd->write_hot_tail == NULL)
 	{
+		printf("read-1 lpn:%d\n",lpn);
 		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
 		alloc_assert(write_hot, "write_hot");
 		write_hot->lpn = lpn;
@@ -1294,18 +1296,23 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 
 		if (flag == 0)
 		{
+			// printf("new write lpn:%d\n",lpn);
 			if (ssd->write_hot_queue_length > 4096)
 			{
+				// printf("len:%d\n", ssd->write_hot_queue_length);
 				struct write_hot *temp = NULL;
 				temp = ssd->write_hot_head;
 				ssd->write_hot_head = ssd->write_hot_head->next;
 				free(temp);
 			}
+			else
+			{
+				ssd->write_hot_queue_length++;
+			}
 			write_hot->lpn = lpn;
 			write_hot->next = NULL;
 			ssd->write_hot_tail->next = write_hot;
 			ssd->write_hot_tail = write_hot;
-			ssd->write_hot_queue_length++;
 		}
 	}
 }
