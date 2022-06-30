@@ -2313,6 +2313,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					{
 						if (r_hot_q->lpn == lpn)
 						{
+							// printf("hot_read lpn %d\n", lpn);
 							hot_r = 1;
 							break;
 						}
@@ -2323,6 +2324,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					{
 						if (w_hot_q->lpn == lpn)
 						{
+							// printf("hot_write lpn %d\n", lpn);
 							hot_w = 1;
 							break;
 						}
@@ -2356,7 +2358,6 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 	}
 	else
 	{
-		printf("t=1 block %d\n", block);
 		int t_b = block;
 		// t = 1
 		for (i = 0; i < ssd->parameter->block_plane; i++) /*查找最多invalid_page的块号，以及最大的invalid_page_num*/
@@ -2374,7 +2375,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 		if (t_b != block)
 		{
 			printf("t %f t-b %d b %d\n", t, t_b, block);
-			abort();
+			// abort();
 		}
 	}
 
