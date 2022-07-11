@@ -16,3 +16,38 @@ cat ex.out | tail -n 1 >> out.txt
 
 ./ssd 1 1 $1 4 1     
 cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 6 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 8 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 10 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 16 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 26 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 32 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 48 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 64 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 128 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 256 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 512 1
+cat ex.out | tail -n 1 >> out.txt
+
+./ssd 1 1 $1 1024 1
