@@ -51,3 +51,4 @@ cat ex.out | tail -n 1 >> out.txt
 cat ex.out | tail -n 1 >> out.txt
 
 ./ssd 1 1 $1 1024 1
+cat ex.out | tail -n 1 >> out.txt

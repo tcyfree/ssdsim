@@ -85,16 +85,16 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	{
 		if (is_sequential == 1)
 		{
-			return (20 + 10 * times) * 1000000 / times;
+			return (7 + 3 * times) * 1000000 / times;
 		}
 		else
 		{
-			return (10 + 20 * times) * 1000000 / times;
+			return (4 + 6 * times) * 1000000 / times;
 		}
 	}
 	else
 	{
-		return 25000000;
+		return 6000000;
 	}
 }
 /**
