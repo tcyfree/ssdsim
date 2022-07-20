@@ -891,6 +891,80 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
 	return SUCCESS;
 }
 
+/**
+ * @brief 记录热写数据
+ * 
+ * @param ssd 
+ * @param lpn 
+ */
+void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
+{
+	struct write_hot *write_hot = NULL;
+	if (ssd->write_hot_tail == NULL)
+	{
+		printf("write-1 lpn:%d\n",lpn);
+		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+		alloc_assert(write_hot, "write_hot");
+		write_hot->lpn = lpn;
+		write_hot->next = NULL;
+		ssd->write_hot_tail = write_hot;
+		ssd->write_hot_head = write_hot;
+		ssd->write_hot_queue_length = 1;
+	}
+	else
+	{
+		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+		alloc_assert(write_hot, "write_hot");
+		struct write_hot *hot = ssd->write_hot_head;
+		struct write_hot *pre = NULL;
+		int flag = 0;
+		//该lpn是否已经存在在队了
+		// while (hot)
+		// {
+		// 	if (hot->lpn == lpn)
+		// 	{
+		// 		//说明是头
+		// 		if (pre == NULL)
+		// 		{
+		// 			ssd->write_hot_head = ssd->write_hot_head->next; 
+		// 		}else
+		// 		{
+		// 			pre->next = pre->next->next;
+		// 		}
+		// 		//移动到队尾
+		// 		ssd->write_hot_tail->next = hot;
+		// 		hot->next = NULL;
+		// 		ssd->write_hot_tail = hot;
+		// 		flag = 1;
+		// 		break;
+		// 	}
+		// 	pre = hot;
+		// 	hot = hot->next;
+		// }
+
+		if (flag == 0)
+		{
+			// printf("new write lpn:%d\n",lpn);
+			if (ssd->write_hot_queue_length > 512)
+			{
+				// printf("len:%d\n", ssd->write_hot_queue_length);
+				struct write_hot *temp = NULL;
+				temp = ssd->write_hot_head;
+				ssd->write_hot_head = ssd->write_hot_head->next;
+				free(temp);
+			}
+			else
+			{
+				ssd->write_hot_queue_length++;
+			}
+			write_hot->lpn = lpn;
+			write_hot->next = NULL;
+			ssd->write_hot_tail->next = write_hot;
+			ssd->write_hot_tail = write_hot;
+		}
+	}
+}
+
 /**********************************************
 *这个函数的功能是根据lpn，size，state创建子请求
 **********************************************/
@@ -1243,79 +1317,6 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	}
 }
 
-/**
- * @brief 记录热写数据
- * 
- * @param ssd 
- * @param lpn 
- */
-void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
-{
-	struct write_hot *write_hot = NULL;
-	if (ssd->write_hot_tail == NULL)
-	{
-		printf("write-1 lpn:%d\n",lpn);
-		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
-		alloc_assert(write_hot, "write_hot");
-		write_hot->lpn = lpn;
-		write_hot->next = NULL;
-		ssd->write_hot_tail = write_hot;
-		ssd->write_hot_head = write_hot;
-		ssd->write_hot_queue_length = 1;
-	}
-	else
-	{
-		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
-		alloc_assert(write_hot, "write_hot");
-		struct write_hot *hot = ssd->write_hot_head;
-		struct write_hot *pre = NULL;
-		int flag = 0;
-		//该lpn是否已经存在在队了
-		// while (hot)
-		// {
-		// 	if (hot->lpn == lpn)
-		// 	{
-		// 		//说明是头
-		// 		if (pre == NULL)
-		// 		{
-		// 			ssd->write_hot_head = ssd->write_hot_head->next; 
-		// 		}else
-		// 		{
-		// 			pre->next = pre->next->next;
-		// 		}
-		// 		//移动到队尾
-		// 		ssd->write_hot_tail->next = hot;
-		// 		hot->next = NULL;
-		// 		ssd->write_hot_tail = hot;
-		// 		flag = 1;
-		// 		break;
-		// 	}
-		// 	pre = hot;
-		// 	hot = hot->next;
-		// }
-
-		if (flag == 0)
-		{
-			// printf("new write lpn:%d\n",lpn);
-			if (ssd->write_hot_queue_length > 512)
-			{
-				// printf("len:%d\n", ssd->write_hot_queue_length);
-				struct write_hot *temp = NULL;
-				temp = ssd->write_hot_head;
-				ssd->write_hot_head = ssd->write_hot_head->next;
-				free(temp);
-			}
-			else
-			{
-				ssd->write_hot_queue_length++;
-			}
-			write_hot->lpn = lpn;
-			write_hot->next = NULL;
-			ssd->write_hot_tail->next = write_hot;
-			ssd->write_hot_tail = write_hot;
-		}
-	}
-}
 /**
  * @brief 记录更新写
  * 
