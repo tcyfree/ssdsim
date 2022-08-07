@@ -2272,6 +2272,23 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 	// printf("active-block %d\n", active_block);
 	invalid_page = 0;
 	block = -1;
+	if (ssd->is_sequential != 1)
+	{
+		for (i = 0; i < ssd->parameter->block_plane; i++) /*查找最多invalid_page的块号，以及最大的invalid_page_num*/
+		{
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].free_page_num > 0)
+			{
+				continue;
+			}
+			if ((active_block != i) && (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num > invalid_page))
+			{
+				invalid_page = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].invalid_page_num;
+				block = i;
+			}
+		}
+		return block;
+	}
+
 	//按照不同Page的属性计算每个Block的实际无效页比例系数t，当需要GC时，选择值最大的Block执行GC。
 	int page1, page2, page3, page4;
 	// 第一类是无效的Page，GC时不产生Page move，直接擦除增加SSD的有效空间；
