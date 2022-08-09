@@ -2669,6 +2669,190 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			times = 0;
 		}
 	}
+	//related work
+	else if (ssd->is_sequential == 2)
+	{
+		int arr[1024], l = 0;
+		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
+		{
+			if ((ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].free_state & PG_SUB) == 0x0000000f)
+			{
+				free_page++;
+			}
+			if (free_page != 0)
+			{
+				// printf("\ntoo much free page. \t %d\t .%d\t%d\t%d\t%d\t\n",free_page,channel,chip,die,plane);
+			}
+			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
+			{
+				// printf("i: %d lpn:%d hdd_flag:%d\n", i, lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
+				arr[l] = lpn;
+				l++;
+			}
+		}
+		//先将block中有效lpn取出、排序
+		sort(arr, l);
+		// int i = 0;
+		// for (i = 0; i < l; i++)
+		// {
+		// 	printf("arr: %d %d\n", arr[i], l);
+		// }
+		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		int index = 0;
+		int is_sequential = 0;
+		int random_num = 0;
+		//给每个move_page查找顺序块
+		for (i = 0; i < l; i++)
+		{
+			//防止1无效，但2有效的情况 或 已经被打包走了
+			if (ssd->dram->map->map_entry[arr[i]].state == 0 || ssd->dram->map->map_entry[arr[i]].hdd_flag != 0)
+			{
+				// printf("lpn:%d hdd_flag:%d state:%d\n", arr[i], ssd->dram->map->map_entry[arr[i]].hdd_flag, ssd->dram->map->map_entry[arr[i]].state);
+				// abort();
+				continue;
+			}
+			int temp = arr[i];
+			index = 0;
+			int j = 0, is_seq = 0;
+			for (j = arr[i] + 1; j <= page_num && l > 1; j++)
+			{
+				//有可能会很多连续的，所以加个判断限制
+				if (index >= (ssd->seq_num - 1))
+				{
+					break;
+				}
+				//有效且非hdd
+				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0)
+				{
+					if (j - temp == 1)
+					{
+						if (random_num != 0)
+						{
+							// char *avg = exec_disksim_syssim(random_num, 0, 0);
+							char *avg = (char)3000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
+							write_hdd_time += (int)avg * random_num;
+							random_num = 0;
+						}
+						// printf("j:%d\n", j);
+						is_seq = 1;
+						// printf("seq\n");
+						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
+						struct read_hot *hot = ssd->read_hot_head;
+						int hot_flag = 0;
+						struct local *location_check = NULL;
+						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+						// printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
+						// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
+						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
+						if (hot_flag == 0)
+						{
+							// printf("hot_flag == 0 ");
+							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
+							{
+								location = (struct local *)malloc(sizeof(struct local));
+								alloc_assert(location, "location");
+								memset(location, 0, sizeof(struct local));
+								location->channel = channel;
+								location->chip = chip;
+								location->die = die;
+								location->plane = plane;
+								location->block = block;
+								int page_i;
+								page_i = get_page_i_by_lpn(ssd, location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, j);
+								if (page_i == -1)
+								{
+									free(location);
+									location = NULL;
+									break;
+								}
+								location->page = location_check->page;
+								adjust_page_hdd(ssd, location, &transfer_size);
+								ssd->gc_lpn_count++;
+								ssd->gc_seq_lpn_count++;
+								free(location);
+								location = NULL;
+								free(location_check);
+								location_check = NULL;
+							}
+							else
+							{
+								ssd->gc_seq_lpn_count++;
+								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+								sequential_page_invalid(ssd, location, &transfer_size);
+								ssd->seq_lpn_all_num++;
+							}
+						}
+						temp = j;
+						//热数据也要算到打包数量块里面
+						times++;
+						index++;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+			// 被查找的lpn:arr[i]
+			struct read_hot *hot = ssd->read_hot_head;
+			int hot_flag = 0;
+			location = (struct local *)malloc(sizeof(struct local));
+			alloc_assert(location, "location");
+			memset(location, 0, sizeof(struct local));
+			location->channel = channel;
+			location->chip = chip;
+			location->die = die;
+			location->plane = plane;
+			location->block = block;
+			int page_i;
+			// printf("%d %d %d %d %d\n", channel, chip, die, plane, block);
+			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
+			if (page_i == -1)
+			{
+				free(location);
+				location = NULL;
+				break;
+			}
+			location->page = page_i;
+			if (hot_flag == 0)
+			{
+				// printf("arr[i]:%d\n", arr[i]);
+				adjust_page_hdd(ssd, location, &transfer_size);
+				if (is_seq == 1)
+				{
+					ssd->gc_seq_lpn_count++;
+				}
+				ssd->gc_lpn_count++;
+				free(location);
+				location = NULL;
+			}
+			if (is_seq)
+			{
+				times++; //被查找的page
+			}
+			else
+			{
+				random_num++;
+			}
+			if (times != 0)
+			{
+				if (times == 1)
+				{
+					printf("times:%d\n", times);
+					abort();
+				}
+				char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+				write_hdd_time += (int)avg * times;
+				if (write_hdd_time < 0)
+				{
+					printf("write_hdd_time:%d\n", write_hdd_time);
+					abort();
+				}
+			}
+			times = 0;
+		}
+	}
 	else
 	{	
 		int arr_r[512], l_r = 0;

@@ -145,7 +145,7 @@ int  main(int argc, char* argv[])
 	//顺序读10次
 	average = exec_disksim_syssim(10, 0, 1);
 	printf("average: %d\n",average);
-	average = exec_disksim_syssim(1, 0, 0);
+	average = exec_disksim_syssim(10, 0, 0);
 	printf("average: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
