@@ -2,6 +2,8 @@
 rm -rf out.txt
 rm -rf update-write.csv
 
+echo $1 >> out.txt
+
 title="seq_num,   gc_count,   gc_lpn_count,   gc_seq_lpn_count,   gc_rand_seq_lpn_count,   read_avg,   write_avg,  update_write_ratio"
 echo "$title" >> out.txt
 
