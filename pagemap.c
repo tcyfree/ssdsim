@@ -2347,14 +2347,11 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					// 	}
 					// 	w_hot_q = w_hot_q->next;
 					// }
-					//连接Redis服务器
-					redisContext *conn = redisConnect("127.0.0.1", 6379);
-					if (conn->err) printf("connection error:%s\n", conn->errstr);
 					redisReply *reply;
 					//判断某个member是否存在
 					char *zhotKeyr[128];
 					sprintf(zhotKeyr, "%s%d", "ZSCORE read-hot  ", lpn);
-					reply = redisCommand(conn, zhotKeyr);
+					reply = redisCommand(ssd->redis_conn, zhotKeyr);
 					printf("%s\n", zhotKeyr);
 					if (reply->len != 0)
 					{
@@ -2364,7 +2361,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 
 					char *zhotKeyw[128];
 					sprintf(zhotKeyw, "%s%d", "ZSCORE write-hot  ", lpn);
-					reply = redisCommand(conn, zhotKeyw);
+					reply = redisCommand(ssd->redis_conn, zhotKeyw);
 					if (reply->len != 0)
 					{
 						hot_w = 1;
