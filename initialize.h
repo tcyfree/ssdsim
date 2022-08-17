@@ -25,6 +25,8 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include <ctype.h>
 #include <sys/types.h>
 #include "avlTree.h"
+#include "hiredis/hiredis.h"
+#include <time.h>
 
 #define SECTOR 512
 #define BUFSIZE 200
@@ -288,6 +290,11 @@ struct ssd_info{
 	FILE * tracefile2;
 	FILE * statisticfile;
 	FILE * statisticfile2;
+
+	//Redis全局连接
+	redisContext *redis_conn;
+	unsigned int read_score;             //记录在SSD中，当前时刻有多少gc操作的请求
+	unsigned int write_score;             //记录在SSD中，当前时刻有多少gc操作的请求
 
     struct parameter_value *parameter;   //SSD参数因子
 	struct dram_info *dram;

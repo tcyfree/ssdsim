@@ -2321,32 +2321,59 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 				}
 				else
 				{
-					struct read_hot *r_hot_q = ssd->read_hot_head;
-					struct write_hot *w_hot_q = ssd->write_hot_head;
+					// struct read_hot *r_hot_q = ssd->read_hot_head;
+					// struct write_hot *w_hot_q = ssd->write_hot_head;
 					int hot_r = 0;
 					int hot_w = 0;
 					//查找热读
-					while (r_hot_q)
+					// while (r_hot_q)
+					// {
+					// 	if (r_hot_q->lpn == lpn)
+					// 	{
+					// 		// printf("hot_read lpn %d\n", lpn);
+					// 		hot_r = 1;
+					// 		break;
+					// 	}
+					// 	r_hot_q = r_hot_q->next;
+					// }
+					// //查找热写
+					// while (w_hot_q)
+					// {
+					// 	if (w_hot_q->lpn == lpn)
+					// 	{
+					// 		// printf("hot_write lpn %d\n", lpn);
+					// 		hot_w = 1;
+					// 		break;
+					// 	}
+					// 	w_hot_q = w_hot_q->next;
+					// }
+					//连接Redis服务器
+					redisContext *conn = redisConnect("127.0.0.1", 6379);
+					if (conn->err) printf("connection error:%s\n", conn->errstr);
+					redisReply *reply;
+					//判断某个member是否存在
+					char *zhotr = "ZSCORE read-hot  ";
+					char *zhotKeyr = (char *)malloc(strlen(zhotr) + strlen(lpn));
+					sprintf(zhotKeyr, "%s%s", zhotr, lpn);
+					reply = redisCommand(conn, zhotKeyr);
+					if (reply->len != 0)
 					{
-						if (r_hot_q->lpn == lpn)
-						{
-							// printf("hot_read lpn %d\n", lpn);
-							hot_r = 1;
-							break;
-						}
-						r_hot_q = r_hot_q->next;
+						hot_r = 1;
+						break;
 					}
-					//查找热写
-					while (w_hot_q)
+
+					char *zhotw = "ZSCORE write-hot  ";
+					char *zhotKeyw = (char *)malloc(strlen(zhotw) + strlen(lpn));
+					sprintf(zhotKeyw, "%s%s", zhotw, lpn);
+					reply = redisCommand(conn, zhotKeyw);
+					if (reply->len != 0)
 					{
-						if (w_hot_q->lpn == lpn)
-						{
-							// printf("hot_write lpn %d\n", lpn);
-							hot_w = 1;
-							break;
-						}
-						w_hot_q = w_hot_q->next;
+						hot_w = 1;
+						break;
 					}
+					
+					freeReplyObject(reply);
+
 					if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
 					{
 						if (hot_r == 0)
@@ -2461,6 +2488,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int index = 0;
 		int is_sequential = 0;
 		int random_num = 0;
+		//连接Redis服务器
+		redisContext *conn = redisConnect("127.0.0.1", 6379);
+		if (conn->err)
+			printf("connection error:%s\n", conn->errstr);
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2502,44 +2533,86 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						struct local *location_check = NULL;
 						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 						// printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
-						while (hot)
+						// while (hot)
+						// {
+						// 	if (hot->lpn == j)
+						// 	{
+						// 		printf("hot-1 %d\n",j);
+						// 		hot_flag = 1;
+						// 		// abort();
+						// 		if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
+						// 		{
+						// 			location = (struct local *)malloc(sizeof(struct local));
+						// 			alloc_assert(location, "location");
+						// 			memset(location, 0, sizeof(struct local));
+						// 			location->channel = channel;
+						// 			location->chip = chip;
+						// 			location->die = die;
+						// 			location->plane = plane;
+						// 			location->block = block;
+						// 			location->page = location_check->page;
+						// 			move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+						// 			ssd->gc_lpn_count++;
+						// 			ssd->gc_seq_lpn_count++;
+						// 			page_move_count++;
+						// 			free(location);
+						// 			location = NULL;
+						// 			free(location_check);
+						// 			location_check = NULL;
+						// 		}
+						// 		else
+						// 		{
+						// 			ssd->gc_seq_lpn_count++;
+						// 			location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+						// 			sequential_page_invalid(ssd, location, &transfer_size);
+						// 		}
+						// 		ssd->seq_lpn_all_num++;
+						// 		break;
+						// 	}
+						// 	hot = hot->next;
+						// }
+						//判断某个member是否存在
+						char *zexit = "ZSCORE read-hot ";
+						char *zexitKey = (char *) malloc(strlen(zexit) + strlen(j));
+						sprintf(zexitKey, "%s%s", zexit, j);
+						redisReply *reply = redisCommand(conn, zexitKey);
+						if (reply->len != 0)
 						{
-							if (hot->lpn == j)
+							printf("hot-1 %d\n", j);
+							hot_flag = 1;
+							// abort();
+							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 							{
-								printf("hot-1 %d\n",j);
-								hot_flag = 1;
-								// abort();
-								if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
-								{
-									location = (struct local *)malloc(sizeof(struct local));
-									alloc_assert(location, "location");
-									memset(location, 0, sizeof(struct local));
-									location->channel = channel;
-									location->chip = chip;
-									location->die = die;
-									location->plane = plane;
-									location->block = block;
-									location->page = location_check->page;
-									move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
-									ssd->gc_lpn_count++;
-									ssd->gc_seq_lpn_count++;
-									page_move_count++;
-									free(location);
-									location = NULL;
-									free(location_check);
-									location_check = NULL;
-								}
-								else
-								{
-									ssd->gc_seq_lpn_count++;
-									location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-									sequential_page_invalid(ssd, location, &transfer_size);
-								}
-								ssd->seq_lpn_all_num++;
-								break;
+								location = (struct local *)malloc(sizeof(struct local));
+								alloc_assert(location, "location");
+								memset(location, 0, sizeof(struct local));
+								location->channel = channel;
+								location->chip = chip;
+								location->die = die;
+								location->plane = plane;
+								location->block = block;
+								location->page = location_check->page;
+								move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+								ssd->gc_lpn_count++;
+								ssd->gc_seq_lpn_count++;
+								page_move_count++;
+								free(location);
+								location = NULL;
+								free(location_check);
+								location_check = NULL;
 							}
-							hot = hot->next;
+							else
+							{
+								ssd->gc_seq_lpn_count++;
+								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+								sequential_page_invalid(ssd, location, &transfer_size);
+							}
+							ssd->seq_lpn_all_num++;
+							break;
 						}
+
+						freeReplyObject(reply);
+
 						// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
 						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 						if (hot_flag == 0)
@@ -2612,25 +2685,45 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				break;
 			}
 			location->page = page_i;
-			while (hot)
+			// while (hot)
+			// {
+			// 	if (hot->lpn == arr[i])
+			// 	{
+			// 		// printf("hot-0 lpn:%d\n", arr[i]);
+			// 		hot_flag = 1;
+			// 		move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+			// 		if (is_seq == 1)
+			// 		{
+			// 			ssd->gc_seq_lpn_count++;
+			// 		}
+			// 		ssd->gc_lpn_count++;
+			// 		free(location);
+			// 		location = NULL;
+			// 		break;
+			// 		ssd->seq_lpn_all_num++;
+			// 	}
+			// 	hot = hot->next;
+			// }
+			//判断某个member是否存在
+			char *zexiti = "ZSCORE read-hot ";
+			char *zexitKeyi = (char *)malloc(strlen(zexiti) + strlen(arr[i]));
+			sprintf(zexitKeyi, "%s%s", zexiti, j);
+			redisReply *replyi = redisCommand(conn, zexitKeyi);
+			if (replyi->len != 0)
 			{
-				if (hot->lpn == arr[i])
+				hot_flag = 1;
+				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				if (is_seq == 1)
 				{
-					// printf("hot-0 lpn:%d\n", arr[i]);
-					hot_flag = 1;
-					move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
-					if (is_seq == 1)
-					{
-						ssd->gc_seq_lpn_count++;
-					}
-					ssd->gc_lpn_count++;
-					free(location);
-					location = NULL;
-					break;
-					ssd->seq_lpn_all_num++;
+					ssd->gc_seq_lpn_count++;
 				}
-				hot = hot->next;
+				ssd->gc_lpn_count++;
+				free(location);
+				location = NULL;
+				break;
+				ssd->seq_lpn_all_num++;
 			}
+
 			if (hot_flag == 0)
 			{
 				// printf("arr[i]:%d\n", arr[i]);
