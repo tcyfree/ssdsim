@@ -967,11 +967,9 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
 
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
-	redisContext* conn = redisConnect("127.0.0.1", 6379);  
-    if(conn->err)   printf("connection error:%s\n", conn->errstr);
 	redisReply* reply;
 	//获取集合元素个数
-	reply = redisCommand(conn, "zcard write-hot");  
+	reply = redisCommand(ssd->redis_conn, "zcard write-hot");  
 	int len = reply->integer;
     printf("len: %d\n", reply->integer); 
 	if (len > 1024)
@@ -992,7 +990,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	char *zaddKey[128];
 	sprintf(zaddKey, "%s%d %d", "zadd write-hot ", write_score, lpn);
 	printf("%s\n", zaddKey);
-    reply = redisCommand(conn, zaddKey);  
+    reply = redisCommand(ssd->redis_conn, zaddKey);  
     freeReplyObject(reply); 
 }
 
@@ -1349,11 +1347,9 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 // }
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 {
-	redisContext* conn = redisConnect("127.0.0.1", 6379);  
-    if(conn->err)   printf("connection error:%s\n", conn->errstr);
 	redisReply* reply;
 	//获取集合元素个数
-	reply = redisCommand(conn, "zcard read-hot");  
+	reply = redisCommand(ssd->redis_conn, "zcard read-hot");  
 	int len = reply->integer;
     printf("len: %d\n", reply->integer); 
 	if (len > 1024)
@@ -1376,7 +1372,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	sprintf(zaddKey, "%s%d %d", "zadd read-hot ", read_score, lpn);
 	printf("%s\n", zaddKey);
 	// abort();
-    reply = redisCommand(conn, zaddKey);  
+    reply = redisCommand(ssd->redis_conn, zaddKey);  
     freeReplyObject(reply); 
 }
 

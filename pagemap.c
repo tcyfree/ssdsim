@@ -2487,10 +2487,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int index = 0;
 		int is_sequential = 0;
 		int random_num = 0;
-		//连接Redis服务器
-		redisContext *conn = redisConnect("127.0.0.1", 6379);
-		if (conn->err)
-			printf("connection error:%s\n", conn->errstr);
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2573,7 +2569,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						//判断某个member是否存在
 						char *zexitKey[128];
 						sprintf(zexitKey, "%s%d", "ZSCORE read-hot ", j);
-						redisReply *reply = redisCommand(conn, zexitKey);
+						redisReply *reply = redisCommand(ssd->redis_conn, zexitKey);
 						if (reply->len != 0)
 						{
 							printf("hot-1 %d\n", j);
@@ -2705,7 +2701,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			//判断某个member是否存在
 			char *zexitKeyi[128];
 			sprintf(zexitKeyi, "%s%d", "ZSCORE read-hot ", arr[i]);
-			redisReply *replyi = redisCommand(conn, zexitKeyi);
+			redisReply *replyi = redisCommand(ssd->redis_conn, zexitKeyi);
 			if (replyi->len != 0)
 			{
 				hot_flag = 1;
