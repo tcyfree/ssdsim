@@ -990,7 +990,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	ssd->write_score++;
 	unsigned int write_score = ssd->write_score;
 	char *zaddKey[128];
-	sprintf(zaddKey, "%s%d %d", "zadd write-hot ", lpn, write_score);
+	sprintf(zaddKey, "%s%d %d", "zadd write-hot ", write_score, lpn);
 	printf("%s\n", zaddKey);
     reply = redisCommand(conn, zaddKey);  
     freeReplyObject(reply); 
@@ -1373,9 +1373,9 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	char *zadd = "zadd read-hot ";
 	unsigned int read_score = ssd->read_score;
 	char *zaddKey[128];
-	sprintf(zaddKey, "%s%d %d", "zadd read-hot ", lpn, read_score);
+	sprintf(zaddKey, "%s%d %d", "zadd read-hot ", read_score, lpn);
 	printf("%s\n", zaddKey);
-	abort();
+	// abort();
     reply = redisCommand(conn, zaddKey);  
     freeReplyObject(reply); 
 }
