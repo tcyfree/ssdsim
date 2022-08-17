@@ -2352,19 +2352,18 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					if (conn->err) printf("connection error:%s\n", conn->errstr);
 					redisReply *reply;
 					//判断某个member是否存在
-					char *zhotr = "ZSCORE read-hot  ";
-					char *zhotKeyr = (char *)malloc(strlen(zhotr) + strlen(lpn));
-					sprintf(zhotKeyr, "%s%s", zhotr, lpn);
+					char *zhotKeyr[128];
+					sprintf(zhotKeyr, "%s%d", "ZSCORE read-hot  ", lpn);
 					reply = redisCommand(conn, zhotKeyr);
+					printf("%s\n", zhotKeyr);
 					if (reply->len != 0)
 					{
 						hot_r = 1;
 						break;
 					}
 
-					char *zhotw = "ZSCORE write-hot  ";
-					char *zhotKeyw = (char *)malloc(strlen(zhotw) + strlen(lpn));
-					sprintf(zhotKeyw, "%s%s", zhotw, lpn);
+					char *zhotKeyw[128];
+					sprintf(zhotKeyw, "%s%d", "ZSCORE write-hot  ", lpn);
 					reply = redisCommand(conn, zhotKeyw);
 					if (reply->len != 0)
 					{
@@ -2572,9 +2571,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						// 	hot = hot->next;
 						// }
 						//判断某个member是否存在
-						char *zexit = "ZSCORE read-hot ";
-						char *zexitKey = (char *) malloc(strlen(zexit) + strlen(j));
-						sprintf(zexitKey, "%s%s", zexit, j);
+						char *zexitKey[128];
+						sprintf(zexitKey, "%s%d", "ZSCORE read-hot ", j);
 						redisReply *reply = redisCommand(conn, zexitKey);
 						if (reply->len != 0)
 						{
@@ -2705,9 +2703,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			// 	hot = hot->next;
 			// }
 			//判断某个member是否存在
-			char *zexiti = "ZSCORE read-hot ";
-			char *zexitKeyi = (char *)malloc(strlen(zexiti) + strlen(arr[i]));
-			sprintf(zexitKeyi, "%s%s", zexiti, j);
+			char *zexitKeyi[128];
+			sprintf(zexitKeyi, "%s%d", "ZSCORE read-hot ", arr[i]);
 			redisReply *replyi = redisCommand(conn, zexitKeyi);
 			if (replyi->len != 0)
 			{

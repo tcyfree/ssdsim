@@ -6,3 +6,4 @@ statistic10.dat
 parameters_name.txt
 parameters_value.txt
 .vscode
+/hiredis
