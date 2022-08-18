@@ -2,7 +2,7 @@
 rm -rf out-batch.txt
 rm -rf update-write.csv
 
-title="seq_num,   gc_count,   gc_lpn_count,   gc_seq_lpn_count,   gc_rand_seq_lpn_count,   read_avg,   write_avg,  update_write_ratio"
+title="seq_num,   gc_count,   move_page_count,   read_avg,   write_avg"
 
 runList="runList.txt" #runList存放准备运行的trace合集
 

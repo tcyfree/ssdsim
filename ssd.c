@@ -1370,8 +1370,6 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"erase count: %13d\n",ssd->erase_count);
 	fprintf(ssd->outputfile,"direct erase count: %13d\n",ssd->direct_erase_count);
 	fprintf(ssd->outputfile,"gc_count: %13d\n",ssd->gc_count);
-	fprintf(ssd->outputfile,"gc_lpn_count: %13d\n",ssd->gc_lpn_count);
-	fprintf(ssd->outputfile,"gc_seq_lpn_count: %13d\n",ssd->gc_seq_lpn_count);
 	fprintf(ssd->outputfile,"copy back count: %13d\n",ssd->copy_back_count);
 	fprintf(ssd->outputfile,"multi-plane program count: %13d\n",ssd->m_plane_prog_count);
 	fprintf(ssd->outputfile,"multi-plane read count: %13d\n",ssd->m_plane_read_count);
@@ -1400,7 +1398,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"buffer write miss: %13d\n",ssd->dram->buffer->write_miss_hit);
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
-	fprintf(ssd->outputfile,"%2d, %13d, %13d, %13d, %20d, %18lld, %18lld, %.4f\n", ssd->seq_num, ssd->gc_count, ssd->gc_lpn_count, ssd->gc_seq_lpn_count, ssd->gc_rand_seq_lpn_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, (double)ssd->update_write_num/ssd->seq_lpn_all_num);
+	fprintf(ssd->outputfile,"%2d, %13d, %13d, %18lld, %18lld\n", ssd->seq_num, ssd->gc_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);
