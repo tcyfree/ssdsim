@@ -2352,7 +2352,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					char *zhotKeyr[128];
 					sprintf(zhotKeyr, "%s%d", "ZSCORE read-hot  ", lpn);
 					reply = redisCommand(ssd->redis_conn, zhotKeyr);
-					printf("%s\n", zhotKeyr);
+					// printf("%s\n", zhotKeyr);
 					if (reply->len != 0)
 					{
 						hot_r = 1;

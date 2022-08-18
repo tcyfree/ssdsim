@@ -971,7 +971,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	//获取集合元素个数
 	reply = redisCommand(ssd->redis_conn, "zcard write-hot");  
 	int len = reply->integer;
-    printf("len: %d\n", reply->integer); 
+    // printf("len: %d\n", reply->integer); 
 	if (len > 1024)
 	{
 		// 获取最小的key删除
@@ -980,7 +980,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		char *remK = reply->element[0]->str;
 		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK));
 		sprintf(zremKey, "%s%s", zrem, remK);
-		printf("%s\n", zremKey);
+		// printf("%s\n", zremKey);
 		redisCommand(ssd->redis_conn, zremKey);
 		ssd->write_score--;
 	}
@@ -989,7 +989,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	unsigned int write_score = ssd->write_score;
 	char *zaddKey[128];
 	sprintf(zaddKey, "%s%d %d", "zadd write-hot ", write_score, lpn);
-	printf("%s\n", zaddKey);
+	// printf("%s\n", zaddKey);
     reply = redisCommand(ssd->redis_conn, zaddKey);  
     freeReplyObject(reply); 
 }
@@ -1351,7 +1351,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	//获取集合元素个数
 	reply = redisCommand(ssd->redis_conn, "zcard read-hot");  
 	int len = reply->integer;
-    printf("len: %d\n", reply->integer); 
+    // printf("len: %d\n", reply->integer); 
 	if (len > 1024)
 	{
 		// 获取最小的key删除
@@ -1361,7 +1361,8 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK));
 		sprintf(zremKey, "%s%s", zrem, remK);
 		printf("%s\n", zremKey);
-		redisCommand(ssd->redis_conn, zremKey);
+		reply = redisCommand(ssd->redis_conn, zremKey);
+    	printf("%s\n", reply->str); 
 		ssd->read_score--;
 	}
 	// 添加
@@ -1370,7 +1371,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	unsigned int read_score = ssd->read_score;
 	char *zaddKey[128];
 	sprintf(zaddKey, "%s%d %d", "zadd read-hot ", read_score, lpn);
-	printf("%s\n", zaddKey);
+	// printf("%s\n", zaddKey);
 	// abort();
     reply = redisCommand(ssd->redis_conn, zaddKey);  
     freeReplyObject(reply); 
