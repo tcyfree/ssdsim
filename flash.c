@@ -978,9 +978,9 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		reply = redisCommand(ssd->redis_conn, "ZRANGEBYSCORE write-hot -inf +inf WITHSCORES LIMIT 0 1");
 		char *zrem = "zrem write-hot ";
 		char *remK = reply->element[0]->str;
-		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK));
+		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK) + 1);
 		sprintf(zremKey, "%s%s", zrem, remK);
-		// printf("%s\n", zremKey);
+		printf("%s\n", zremKey);
 		redisCommand(ssd->redis_conn, zremKey);
 		ssd->write_score--;
 	}
@@ -1358,11 +1358,12 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		reply = redisCommand(ssd->redis_conn, "ZRANGEBYSCORE read-hot -inf +inf WITHSCORES LIMIT 0 1");
 		char *zrem = "zrem read-hot ";
 		char *remK = reply->element[0]->str;
-		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK));
+		// 因为申请了一个size为4的内存,但是strcpy过去了一个size为5的字符串,因此破坏了这个指针
+		char *zremKey = (char *)malloc(strlen(zrem) + strlen(remK) + 1);
 		sprintf(zremKey, "%s%s", zrem, remK);
 		printf("%s\n", zremKey);
 		reply = redisCommand(ssd->redis_conn, zremKey);
-    	printf("%s\n", reply->str); 
+    	// printf("%d asdfda\n", reply->str); 
 		ssd->read_score--;
 	}
 	// 添加
