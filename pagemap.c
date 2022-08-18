@@ -2721,58 +2721,38 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						if (random_num != 0)
 						{
 							// char *avg = exec_disksim_syssim(random_num, 0, 0);
-							char *avg = (char)3000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
+							char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
 							write_hdd_time += (int)avg * random_num;
 							random_num = 0;
 						}
-						// printf("j:%d\n", j);
 						is_seq = 1;
-						// printf("seq\n");
-						// 如果是热数据则不写到HDD，且若page在当前block ==> move_page()，在其它block标识一下
-						struct read_hot *hot = ssd->read_hot_head;
-						int hot_flag = 0;
 						struct local *location_check = NULL;
 						location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-						// printf("location_check: %d %d %d %d %d %d\n", location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, location_check->page);
-						// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
-						//  ssd->dram->map->map_entry[j].hdd_flag = 2;
-						if (hot_flag == 0)
+						if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 						{
-							// printf("hot_flag == 0 ");
-							if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
-							{
-								location = (struct local *)malloc(sizeof(struct local));
-								alloc_assert(location, "location");
-								memset(location, 0, sizeof(struct local));
-								location->channel = channel;
-								location->chip = chip;
-								location->die = die;
-								location->plane = plane;
-								location->block = block;
-								int page_i;
-								page_i = get_page_i_by_lpn(ssd, location_check->channel, location_check->chip, location_check->die, location_check->plane, location_check->block, j);
-								if (page_i == -1)
-								{
-									free(location);
-									location = NULL;
-									break;
-								}
-								location->page = location_check->page;
-								adjust_page_hdd(ssd, location, &transfer_size);
-								ssd->gc_lpn_count++;
-								ssd->gc_seq_lpn_count++;
-								free(location);
-								location = NULL;
-								free(location_check);
-								location_check = NULL;
-							}
-							else
-							{
-								ssd->gc_seq_lpn_count++;
-								location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-								sequential_page_invalid(ssd, location, &transfer_size);
-								ssd->seq_lpn_all_num++;
-							}
+							location = (struct local *)malloc(sizeof(struct local));
+							alloc_assert(location, "location");
+							memset(location, 0, sizeof(struct local));
+							location->channel = channel;
+							location->chip = chip;
+							location->die = die;
+							location->plane = plane;
+							location->block = block;
+							location->page = location_check->page;
+							adjust_page_hdd(ssd, location, &transfer_size);
+							ssd->gc_lpn_count++;
+							ssd->gc_seq_lpn_count++;
+							free(location);
+							location = NULL;
+							free(location_check);
+							location_check = NULL;
+						}
+						else
+						{
+							ssd->gc_seq_lpn_count++;
+							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+							sequential_page_invalid(ssd, location, &transfer_size);
+							ssd->seq_lpn_all_num++;
 						}
 						temp = j;
 						//热数据也要算到打包数量块里面
@@ -2797,27 +2777,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->plane = plane;
 			location->block = block;
 			int page_i;
-			// printf("%d %d %d %d %d\n", channel, chip, die, plane, block);
 			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
-			if (page_i == -1)
-			{
-				free(location);
-				location = NULL;
-				break;
-			}
 			location->page = page_i;
-			if (hot_flag == 0)
+			adjust_page_hdd(ssd, location, &transfer_size);
+			if (is_seq == 1)
 			{
-				// printf("arr[i]:%d\n", arr[i]);
-				adjust_page_hdd(ssd, location, &transfer_size);
-				if (is_seq == 1)
-				{
-					ssd->gc_seq_lpn_count++;
-				}
-				ssd->gc_lpn_count++;
-				free(location);
-				location = NULL;
+				ssd->gc_seq_lpn_count++;
 			}
+			ssd->gc_lpn_count++;
+			free(location);
+			location = NULL;
 			if (is_seq)
 			{
 				times++; //被查找的page
