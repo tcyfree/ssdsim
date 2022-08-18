@@ -945,7 +945,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		if (flag == 0)
 		{
 			// printf("new write lpn:%d\n",lpn);
-			if (ssd->write_hot_queue_length > 512)
+			if (ssd->write_hot_queue_length > HOT_QUEUE_LEN)
 			{
 				// printf("len:%d\n", ssd->write_hot_queue_length);
 				struct write_hot *temp = NULL;
@@ -1288,7 +1288,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		if (flag == 0)
 		{
 			// printf("new lpn:%d\n",lpn);
-			if (ssd->read_hot_queue_length > 512)
+			if (ssd->read_hot_queue_length > HOT_QUEUE_LEN)
 			{
 				struct read_hot *temp = NULL;
 				temp = ssd->read_hot_head;

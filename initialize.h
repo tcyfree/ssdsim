@@ -84,6 +84,8 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #define REQUEST_IN 300         //下一条请求到达的时间
 #define OUTPUT 301             //下一次数据输出的时间
 
+#define HOT_QUEUE_LEN 512      //热读/写队列长度
+
 #define GC_WAIT 400
 #define GC_ERASE_C_A 401
 #define GC_COPY_BACK 402
