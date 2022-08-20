@@ -2427,7 +2427,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	//***********************************************
 	free_page=0;
 	unsigned times = 0, write_hdd_time = 0;
-	printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
+	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
