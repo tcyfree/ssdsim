@@ -175,8 +175,8 @@ int  main(int argc, char* argv[])
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0], ssd->parameter->chip_num); //（各channel上chip数量，整个SSD上chip数量）
 	//由于大部分是写少读多，所以老化一部分，更快的GC。而且要在预填数据之前，否则会有错误
-	make_aged(ssd);
-	get_aged_ratio(ssd);
+	// make_aged(ssd);
+	// get_aged_ratio(ssd);
 	//warm_up
 	pre_process_write_read(ssd);
 	get_aged_ratio(ssd);
