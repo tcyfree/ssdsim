@@ -22,9 +22,6 @@ cat ex.out | tail -n 1 >> out.txt
 ./ssd 1 1 $1 8 2
 cat ex.out | tail -n 1 >> out.txt
 
-./ssd 1 1 $1 10 2
-cat ex.out | tail -n 1 >> out.txt
-
 ./ssd 1 1 $1 16 2
 cat ex.out | tail -n 1 >> out.txt
 
@@ -44,9 +41,6 @@ cat ex.out | tail -n 1 >> out.txt
 cat ex.out | tail -n 1 >> out.txt
 
 ./ssd 1 1 $1 8 1
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 10 1
 cat ex.out | tail -n 1 >> out.txt
 
 ./ssd 1 1 $1 16 1
