@@ -21,34 +21,22 @@ function runTrace() {
     echo $saveFile2 >> out-batch.txt
 
     # 读写率
-    cd ../trace-analysis && ./ssd 1  ../trace/$line && cd ../ssdsim && cat ../trace-analysis/trace-analysis.txt >> out-batch.txt
+    # cd ../trace-analysis && ./ssd 1  ../trace/$line && cd ../ssdsim && cat ../trace-analysis/trace-analysis.txt >> out-batch.txt
 
     echo "$title" >> out-batch.txt
 
-    ./ssd 1 1 ../trace/$line   
+    ./ssd 1 1 ../trace/$line 3 2     
     cat ex.out | tail -n 1 >> out-batch.txt
 
-    ./ssd 1 1 ../trace/$line 2 1     
+    ./ssd 1 1 ../trace/$line 5 2    
     cat ex.out | tail -n 1 >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 3 1     
     cat ex.out | tail -n 1 >> out-batch.txt
 
-    ./ssd 1 1 ../trace/$line 4 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
     ./ssd 1 1 ../trace/$line 5 1     
     cat ex.out | tail -n 1 >> out-batch.txt
 
-    ./ssd 1 1 ../trace/$line 6 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 7 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-
-    ./ssd 1 1 ../trace/$line 8 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
-   
   done 
 }
 runTrace $runList
