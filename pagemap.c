@@ -2456,8 +2456,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// {
 		// 	printf("arr: %d %d\n", arr[i], l);
 		// }
-		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
-		int index = 0;
+		// 最大lpn
+		int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		int seq_num = 0;
 		int is_sequential = 0;
 		int random_num = 0;
 		int page_i = 0;
@@ -2473,17 +2474,17 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				continue;
 			}
 			int temp = arr[i];
-			index = 0;
+			seq_num = 0;
 			int j = 0, is_seq = 0;
 			// 热读 热写
 			struct read_hot *r_hot_q;
 			struct write_hot *w_hot_q;
 			int hot_r = 0;
 			int hot_w = 0;
-			for (j = arr[i] + 1; j <= page_num && l > 1; j++)
+			for (j = arr[i] + 1; j <= max_lpn && l > 1; j++)
 			{
 				//有可能会很多连续的，所以加个判断限制
-				if (index >= (ssd->seq_num - 1))
+				if (seq_num >= (ssd->seq_num - 1))
 				{
 					break;
 				}
@@ -2567,7 +2568,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						temp = j;
 						//热数据也要算到打包数量块里面
 						times++;
-						index++;
+						seq_num++;
 					}
 					else
 					{
@@ -2678,8 +2679,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// {
 		// 	printf("arr: %d %d\n", arr[i], l);
 		// }
-		int page_num = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
-		int index = 0;
+		int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		int seq_num = 0;
 		int is_sequential = 0;
 		int random_num = 0;
 		//给每个move_page查找顺序块
@@ -2693,12 +2694,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				continue;
 			}
 			int temp = arr[i];
-			index = 0;
+			seq_num = 0;
 			int j = 0, is_seq = 0;
-			for (j = arr[i] + 1; j <= page_num && l > 1; j++)
+			for (j = arr[i] + 1; j <= max_lpn && l > 1; j++)
 			{
 				//有可能会很多连续的，所以加个判断限制
-				if (index >= (ssd->seq_num - 1))
+				if (seq_num >= (ssd->seq_num - 1))
 				{
 					break;
 				}
@@ -2742,7 +2743,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						temp = j;
 						//热数据也要算到打包数量块里面
 						times++;
-						index++;
+						seq_num++;
 					}
 					else
 					{
