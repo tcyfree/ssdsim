@@ -2429,7 +2429,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].fast_erase = TRUE;
 	//***********************************************
 	free_page=0;
-	unsigned times = 0, write_hdd_time = 0;
+	unsigned int times = 0, write_hdd_time = 0, large_lsn = 0, max_lpn = 0;
+	large_lsn=(int)((ssd->parameter->subpage_page*ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num)*(1-ssd->parameter->overprovide));
+	max_lpn = large_lsn / ssd->parameter->subpage_page;
+	printf("max_lpn:%d\n", max_lpn);
 	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
@@ -2460,7 +2463,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// 	printf("arr: %d %d\n", arr[i], l);
 		// }
 		// 最大lpn
-		int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		printf("max_lpn-0:%d\n");
 		int seq_num = 0;
 		int is_sequential = 0;
 		int random_num = 0;
@@ -2682,7 +2686,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// {
 		// 	printf("arr: %d %d\n", arr[i], l);
 		// }
-		int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		// int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int seq_num = 0;
 		int is_sequential = 0;
 		int random_num = 0;
