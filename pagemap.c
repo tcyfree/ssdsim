@@ -1184,6 +1184,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		//如果是hdd_flag=1,则location.lpn=0(move_page)
 		if(	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn!=lpn && ssd->dram->map->map_entry[lpn].hdd_flag == 0)
 		{
+			printf("lpn:%d locaton-lpn:%d\n", lpn, ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn);
 			printf("\nError %din get_ppn()2\n", ssd->dram->map->map_entry[lpn].hdd_flag);
 		}
 
@@ -1225,10 +1226,10 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
-			if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
-			{
-				record_update_write(ssd, lpn);
-			}
+			// if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
+			// {
+			// 	// record_update_write(ssd, lpn);
+			// }
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 	}
@@ -2138,7 +2139,6 @@ Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, un
 {
 	unsigned int lpn=0, page_num=0,valid_state=0;
 	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
-	valid_state=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state;
 
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;

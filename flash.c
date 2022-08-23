@@ -1081,20 +1081,6 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->size=size;
 		sub->state=state;
 		sub->begin_time=ssd->current_time;
-		//覆盖写不用管HDD
-		// if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
-		// {
-		// 	if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
-		// 	{
-		// 		printf("hdd_flag:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag);
-		// 	}
-		// 	// 写入hdd的时间
-		// 	int write_hdd_time = 0;
-		// 	char *avg = exec_disksim_syssim(1, 0, 0);
-		// 	write_hdd_time += (int)avg * 1;
-		// 	sub->current_time=ssd->current_time+write_hdd_time;
-		// 	sub->begin_time=ssd->current_time+write_hdd_time;
-		// }
 
 		//调用allocate_location()函数为sub分配物理地址
 		//若非ERROR则创建写子请求成功直接返回sub
