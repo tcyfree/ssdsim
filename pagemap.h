@@ -42,7 +42,7 @@ int decide_gc_invoke(struct ssd_info *ssd, unsigned int channel);
 int set_entry_state(struct ssd_info *ssd,unsigned int lsn,unsigned int size);
 unsigned int get_ppn_for_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsigned int die,unsigned int plane);
 
-int erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int chip ,unsigned int die,unsigned int plane ,unsigned int block);
+int erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int chip ,unsigned int die,unsigned int plane ,unsigned int block, int from);
 int erase_planes(struct ssd_info * ssd, unsigned int channel, unsigned int chip, unsigned int die1, unsigned int plane1,unsigned int command);
 int move_page(struct ssd_info * ssd, struct local *location,unsigned int * transfer_size);
 int adjust_page_hdd(struct ssd_info * ssd, struct local *location,unsigned int * transfer_size);
