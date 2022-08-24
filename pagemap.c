@@ -2114,7 +2114,7 @@ Status adjust_page_hdd(struct ssd_info * ssd, struct local *location, unsigned i
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
 
-    (* transfer_size)+=size(valid_state);
+    // (* transfer_size)+=size(valid_state);
 
 	//修改map信息，设hdd_flag置为hdd标识
 	ssd->dram->map->map_entry[lpn].hdd_flag=1;
@@ -3027,7 +3027,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// }
 		
 
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
+		// ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
+		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 
