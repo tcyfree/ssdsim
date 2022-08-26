@@ -1946,17 +1946,17 @@ Status copy_back(struct ssd_info * ssd, unsigned int channel, unsigned int chip,
 	ssd->channel_head[channel].chip_head[chip].current_state=CHIP_WRITE_BUSY;
 	ssd->channel_head[channel].chip_head[chip].current_time=ssd->current_time;
 	ssd->channel_head[channel].chip_head[chip].next_state=CHIP_IDLE;
-	//ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
-	if (new_ppn%2 == 0)
-		{
-			ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
-			//printf("LSB programming\n");
-		}
-	else
-		{
-			ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
-			//printf("MSB programming\n");
-		}
+	ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
+	// if (new_ppn%2 == 0)
+	// 	{
+	// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
+	// 		//printf("LSB programming\n");
+	// 	}
+	// else
+	// 	{
+	// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
+	// 		//printf("MSB programming\n");
+	// 	}
 
 	return SUCCESS;
 }
@@ -2003,17 +2003,17 @@ Status static_write(struct ssd_info * ssd, unsigned int channel,unsigned int chi
 	//**************************************************************
 	int new_ppn;
 	new_ppn=ssd->dram->map->map_entry[sub->lpn].pn;
-	//ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
-	if (new_ppn%2 == 0)
-		{
-			ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
-			//printf("LSB programming\n");
-		}
-	else
-		{
-			ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
-			//printf("MSB programming\n");
-		}
+	ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
+	// if (new_ppn%2 == 0)
+	// 	{
+	// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
+	// 		//printf("LSB programming\n");
+	// 	}
+	// else
+	// 	{
+	// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
+	// 		//printf("MSB programming\n");
+	// 	}
 	//****************************************************************
 	return SUCCESS;
 }
@@ -3729,20 +3729,20 @@ struct ssd_info *compute_serve_time(struct ssd_info *ssd,unsigned int channel,un
 		ssd->channel_head[channel].chip_head[chip].current_state=CHIP_WRITE_BUSY;
 		ssd->channel_head[channel].chip_head[chip].current_time=ssd->current_time;
 		ssd->channel_head[channel].chip_head[chip].next_state=CHIP_IDLE;
-		//ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG;
+		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG;
 		//**************************************************************
-		int new_ppn;
-		new_ppn=subs[0]->ppn;
-		if (new_ppn%2 == 0)
-			{
-				ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG_L;
-				printf("LSB programming\n");
-			}
-		else
-			{
-				ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG_M;
-				printf("MSB programming\n");
-			}
+		// int new_ppn;
+		// new_ppn=subs[0]->ppn;
+		// if (new_ppn%2 == 0)
+		// 	{
+		// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG_L;
+		// 		printf("LSB programming\n");
+		// 	}
+		// else
+		// 	{
+		// 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tPROG_M;
+		// 		printf("MSB programming\n");
+		// 	}
 		//****************************************************************
 	}
 	else
@@ -4351,18 +4351,18 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				ssd->channel_head[location->channel].chip_head[location->chip].current_time=ssd->current_time;
 				ssd->channel_head[location->channel].chip_head[location->chip].next_state=CHIP_IDLE;
 				//***************************************************************************
-				//ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
-				if (sub->ppn%3 == 0){
-					//printf("LSB\n");
-					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
-					}
-				else if(sub->ppn%3 == 2){
-					//printf("MSB\n");
-					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
-					}
-				else{
-					ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_C;
-					}
+				ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG;
+				// if (sub->ppn%3 == 0){
+				// 	//printf("LSB\n");
+				// 	ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_L;
+				// 	}
+				// else if(sub->ppn%3 == 2){
+				// 	//printf("MSB\n");
+				// 	ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_M;
+				// 	}
+				// else{
+				// 	ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time=time+ssd->parameter->time_characteristics.tPROG_C;
+				// 	}
 				sub->next_state_predict_time=ssd->channel_head[location->channel].chip_head[location->chip].next_state_predict_time;
 				sub->complete_time=sub->next_state_predict_time;
 				//***************************************************************************
