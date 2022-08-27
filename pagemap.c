@@ -2491,7 +2491,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				//有可能会很多连续的，所以加个判断限制
 				if (seq_num >= (ssd->seq_num - 1))
 				{
-					printf("seq_num:%d\n", seq_num);
 					break;
 				}
 				//有效且非hdd
