@@ -100,4 +100,4 @@ advanced command priority=0;    #0 for interleave is prior to two-plane, 1 for t
 greed CB command=0;            #1 for using copyback command greedily, 0 for not
 greed MPW command=1;            #1 for using multi-plane write greedily, 0 for not
 aged=1;                         #1 for making SSD aged, 0 for keeping SSD non-aged
-aged ratio=0.1;                #If we need to make SSD aged, set the aged ratio in advance
+aged ratio=0.3;                #If we need to make SSD aged, set the aged ratio in advance
