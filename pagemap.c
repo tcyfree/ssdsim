@@ -2432,7 +2432,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	unsigned int times = 0, write_hdd_time = 0, large_lsn = 0, max_lpn = 0;
 	large_lsn=(int)((ssd->parameter->subpage_page*ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num)*(1-ssd->parameter->overprovide));
 	max_lpn = large_lsn / ssd->parameter->subpage_page;
-	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
+	printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
@@ -2498,8 +2498,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (random_num != 0)
 					{
-						// char *avg = exec_disksim_syssim(random_num, 0, 0);
-						char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
+						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
 						write_hdd_time += (int)avg * random_num;
 						random_num = 0;
 					}
@@ -2710,8 +2710,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (random_num != 0)
 					{
-						// char *avg = exec_disksim_syssim(random_num, 0, 0);
-						char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
+						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
 						write_hdd_time += (int)avg * random_num;
 						random_num = 0;
 					}

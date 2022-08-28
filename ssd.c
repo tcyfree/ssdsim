@@ -53,22 +53,22 @@ int get_avg_time(int index, int seq)
  */
 char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
 {
-	// char average[1024], command[1024];
-	// FILE * temp;
-	// // sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
-	// //容器里面执行
-	// sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
-	// // printf("%s\n", command);
-	// int i = system(command);
-	// // printf("i: %d\n", i);
-	// temp = fopen("../disksim/valid/temp.txt","r");
-	// if(temp == NULL )      /*打开trace文件从中读取请求*/
-	// {
-	// 	printf("the trace temp can't open\n");
-	// }
-	// fgets(average, 200, temp);
-	// // printf("average: %d\n",average);
-	// return atoi(average);
+	char average[1024], command[1024];
+	FILE * temp;
+	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
+	//容器里面执行
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d hplajw.parv > temp.txt", times, is_read, is_sequential);
+	// printf("%s\n", command);
+	int i = system(command);
+	// printf("i: %d\n", i);
+	temp = fopen("../disksim/valid/temp.txt","r");
+	if(temp == NULL )      /*打开trace文件从中读取请求*/
+	{
+		printf("the trace temp can't open\n");
+	}
+	fgets(average, 200, temp);
+	// printf("average: %d\n", atoi(average));
+	return atoi(average);
 	// if (is_read == 0)
 	// {
 	// 	if (is_sequential == 1)
@@ -81,21 +81,22 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	// } else {
 	// 	return 30000000;
 	// }
-	if (is_read == 0)
-	{
-		if (is_sequential == 1)
-		{
-			return (7 + 3 * times) * 1000000 / times;
-		}
-		else
-		{
-			return (4 + 6 * times) * 1000000 / times;
-		}
-	}
-	else
-	{
-		return 6000000;
-	}
+	// self define cost function for HDD
+	// if (is_read == 0)
+	// {
+	// 	if (is_sequential == 1)
+	// 	{
+	// 		return (7 + 3 * times) * 1000000 / times;
+	// 	}
+	// 	else
+	// 	{
+	// 		return (4 + 6 * times) * 1000000 / times;
+	// 	}
+	// }
+	// else
+	// {
+	// 	return 6000000;
+	// }
 }
 /**
  * @brief Get the aged ratio object
@@ -144,9 +145,9 @@ int  main(int argc, char* argv[])
 	#endif
 	//顺序读10次
 	average = exec_disksim_syssim(10, 0, 1);
-	printf("average: %d\n",average);
+	printf("average-s: %d\n",average);
 	average = exec_disksim_syssim(10, 0, 0);
-	printf("average: %d\n",average);
+	printf("average-r: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化
