@@ -88,7 +88,7 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	}
 	else
 	{
-		return 500000;
+		return 5000000;
 	}
 }
 /**
