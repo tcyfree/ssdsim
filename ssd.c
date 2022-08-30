@@ -79,7 +79,7 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	{
 		if (is_sequential == 1)
 		{
-			return 500000;
+			return (5500000 + 500000 *times) / times;
 		}
 		else
 		{
