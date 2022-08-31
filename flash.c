@@ -4204,6 +4204,12 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 						printf("read_hdd_time:%d\n", read_hdd_time);
 						abort();
 					}
+					if (ssd->HDDTime < ssd->current_time)
+					{
+						ssd->HDDTime = ssd->current_time;
+					}
+					read_hdd_time += (ssd->HDDTime - ssd->current_time);
+					ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
 					sub->next_state_predict_time = ssd->current_time + read_hdd_time;
 					
 				}else{
