@@ -1798,28 +1798,12 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 	{
 		while (lpn <= last_lpn)
 		{
-			//是否从HDD读数据
+			sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
+			sub_size = size(sub_state);
+			sub = creat_sub_request(ssd, lpn, sub_size, sub_state, req, req->operation, 0);
+			//将HDD写回SSD
 			if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 			{
-				//1. 从HDD读数据
-				int read_hdd_time = 0;
-				char *avg = exec_disksim_syssim(1, 1, 0);
-				read_hdd_time += (int)avg * 1;
-				if (read_hdd_time < 0)
-				{
-					printf("read_hdd_time:%d\n", read_hdd_time);
-					abort();
-				}
-				if (ssd->HDDTime < ssd->current_time)
-				{
-					ssd->HDDTime = ssd->current_time;
-				}
-				read_hdd_time += (ssd->HDDTime - ssd->current_time);
-				ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
-
-				ssd->current_time = ssd->current_time + read_hdd_time;
-
-				//2. 并把数据写回到SSD
 				int target_page_type;
 				int random_num;
 				random_num = rand() % 100;
@@ -1835,6 +1819,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				{
 					target_page_type = TARGET_MSB;
 				}
+				// 只有一个lpn
 				if (ssd->parameter->subpage_page == 32)
 				{
 					mask = 0xffffffff;
@@ -1860,12 +1845,6 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				sub_size = size(state);
 				sub = creat_sub_request(ssd, lpn, sub_size, state, req, WRITE, target_page_type);
 				ssd->dram->map->map_entry[lpn].hdd_flag == 0;
-			}
-			else
-			{
-				sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
-				sub_size = size(sub_state);
-				sub = creat_sub_request(ssd, lpn, sub_size, sub_state, req, req->operation, 0);
 			}
 			lpn++;
 		}

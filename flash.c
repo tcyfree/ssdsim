@@ -1025,6 +1025,33 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		//所有读请求对应的映射关系都已经经过了一定的初始化了
 		sub->state=(ssd->dram->map->map_entry[lpn].state&0x7fffffff);
 		sub_r=p_ch->subs_r_head; //sub_r指向目标channel的读子请求队列的队头 /*以下几行包括flag用于判断该读子请求队列中是否有与这个子请求相同的，有的话，将新的子请求直接赋为完成*/
+		//是否从HDD读数据
+		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+		{
+			// 1. 从HDD读数据
+			int read_hdd_time = 0;
+			char *avg = exec_disksim_syssim(1, 1, 0);
+			read_hdd_time += (int)avg * 1;
+			if (read_hdd_time < 0)
+			{
+				printf("read_hdd_time:%d\n", read_hdd_time);
+				abort();
+			}
+			if (ssd->HDDTime < ssd->current_time)
+			{
+				ssd->HDDTime = ssd->current_time;
+			}
+			read_hdd_time += (ssd->HDDTime - ssd->current_time);
+			ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
+
+			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
+			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
+			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
+			sub->next_state_predict_time=ssd->current_time+read_hdd_time;//下一状态预计时间为当前时间偏移read_hdd_time
+			sub->complete_time=ssd->current_time+read_hdd_time;
+			return sub;
+		}
+
 		//开始在channel的读请求队列中寻找是否存在有对应ppn的子请求节点
 		flag=0;
 		while (sub_r!=NULL)
