@@ -2291,9 +2291,9 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 	}
 
 	//按照不同Page的属性计算每个Block的实际无效页比例系数t，当需要GC时，选择值最大的Block执行GC。
-	int page1, page2, page3, page4, page5;
+	int page1, page2, page3, page4;
 	// 第一类是无效的Page，GC时不产生Page move，直接擦除增加SSD的有效空间；
-	// 第二类是之前已经打包写入HDD中的Page，并且该类Page还并未更新，此时可以将其直接擦除，释放有效空间；
+	// 第二类是之前已经打包写入HDD中的Page，并且该类Page还并未更新（包括Page_gc,Page_nongc），此时可以将其直接擦除，释放有效空间；
 	// 第三类是普通Page，即在GC时直接写入到HDD中，将SSD中的Page擦除，增加SSD的有效空间；
 	// 最后一类是冷写热读的Page，GC时通过Page move保留在SSD中，GC完成后也不增加SSD的有效空间。
 	float t = 0;
@@ -2306,7 +2306,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 		}
 		if ((active_block != i))
 		{
-			page1 = page2 = page3 = page4 = page5 = 0;
+			page1 = page2 = page3 = page4 = 0;
 			for (j = 0; j < ssd->parameter->page_block; j++)
 			{
 				lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].lpn;
@@ -2315,12 +2315,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 				{
 					page1++;
 				}
-				//防止non-gc
-				else if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
-				{
-					page5++;
-				}
-				else if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+				else if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 				{
 					// printf("lpn:%d hdd_flag %d\n", lpn, ssd->dram->map->map_entry[lpn].hdd_flag);
 					page2++;
@@ -2367,7 +2362,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 				}
 			}
 			// printf("%d %d %d %d\n", page1, page2, page3, page4);
-			t_i = ((float)page1 + (float)page5 * 0.75 + (float)page2 * 0.5 + (float)page3 * 0.25) / (float)(page1 + page2 + page3 + page4 + page5);
+			t_i = ((float)page1 + (float)page2 * 0.5 + (float)page3 * 0.25) / (float)(page1 + page2 + page3 + page4);
 			if (t < t_i)
 			{
 				t = t_i;
