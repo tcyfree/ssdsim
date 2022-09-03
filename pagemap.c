@@ -2438,6 +2438,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	large_lsn=(int)((ssd->parameter->subpage_page*ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num)*(1-ssd->parameter->overprovide));
 	max_lpn = large_lsn / ssd->parameter->subpage_page;
 	// printf("gc-block: %d %d %d %d %d\n", channel, chip, die, plane, block);
+	struct local *location_check = NULL;
 	if (ssd->is_sequential == 1)
 	{
 		int arr[1024], l = 0;
@@ -2472,7 +2473,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int is_sequential = 0;
 		int random_num = 0;
 		int page_i = 0;
-		struct local *location_check = NULL;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2508,6 +2508,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						write_hdd_time += (int)avg * random_num;
 						random_num = 0;
 					}
+					//查找的page在同一通道
+					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+					if (location_check->channel != channel)
+					{
+						break;
+					}
 					// printf("j:%d\n", j);
 					is_seq = 1;
 					r_hot_q = ssd->read_hot_head;
@@ -2534,7 +2540,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					//查找的page是否是当前块
 					//机制1：针对第一类Page，执行GC时只将存在于热读列表中同时不在热写列表中的数据保留在SSD中，而将其他数据写入到HDD中。
-					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 					if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 					{
 						location = (struct local *)malloc(sizeof(struct local));
@@ -2719,6 +2724,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
 						write_hdd_time += (int)avg * random_num;
 						random_num = 0;
+					}
+					//查找的page在同一通道
+					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+					if (location_check->channel != channel)
+					{
+						break;
 					}
 					is_seq = 1;
 					struct local *location_check = NULL;
@@ -3035,7 +3046,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		write_hdd_time += (ssd->HDDTime - ssd->current_time);
 		ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
 
-		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC) + write_hdd_time;
+		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC);
 
 		ssd->channel_head[channel].chip_head[chip].next_state_predict_time=ssd->channel_head[channel].next_state_predict_time+ssd->parameter->time_characteristics.tBERS;
 
