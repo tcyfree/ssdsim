@@ -2510,7 +2510,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-					if (location_check->channel != channel)
+					if (location_check->chip != chip && location_check->channel != channel)
 					{
 						break;
 					}
@@ -2727,13 +2727,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-					if (location_check->channel != channel)
+					if (location_check->chip != chip && location_check->channel != channel)
 					{
 						break;
 					}
 					is_seq = 1;
-					struct local *location_check = NULL;
-					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 					if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 					{
 						location = (struct local *)malloc(sizeof(struct local));
