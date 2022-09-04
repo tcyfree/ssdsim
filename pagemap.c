@@ -320,7 +320,7 @@ struct ssd_info *pre_process_write_read(struct ssd_info *ssd)
 
 	printf("\n");
 	printf("begin pre_process_write_read.................\n");
-	ssd->tracefile2=fopen("../trace/1612-lun3.csv","r");//以只读方式打开trace文件，从中获取I/O请求
+	ssd->tracefile2=fopen("../trace/1615-lun0.csv","r");//以只读方式打开trace文件，从中获取I/O请求
 	if(ssd->tracefile2 == NULL )      /*打开trace文件从中读取请求*/
 	{
 		printf("the trace file2 can't open\n");
