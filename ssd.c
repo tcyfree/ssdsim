@@ -1323,7 +1323,7 @@ void statistic_output(struct ssd_info *ssd)
 						}
 						for (int l = 0; l < ssd->parameter->page_block; l++)
 						{
-							if (ssd->dram->map->map_entry[ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn].hdd_flag == 2)
+							if (ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn != -1 && ssd->dram->map->map_entry[ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn].hdd_flag == 2)
 							{
 								// 被打包块未做GC
 								ssd->non_gc_hdd_count++;
