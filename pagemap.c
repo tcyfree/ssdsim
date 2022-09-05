@@ -1230,6 +1230,11 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 			// {
 			// 	// record_update_write(ssd, lpn);
 			// }
+			// 被打包page更新
+			if (ssd->dram->map->map_entry[lpn].hdd_flag == 2)
+			{
+				ssd->update_hdd_count++;
+			}
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 	}

@@ -1321,6 +1321,16 @@ void statistic_output(struct ssd_info *ssd)
 							erase=erase+ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].erase_count;
 							plane_erase+=ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].erase_count;
 						}
+						for (int l = 0; l < ssd->parameter->page_block; l++)
+						{
+							if (ssd->dram->map->map_entry[ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn].hdd_flag == 2)
+							{
+								// 被打包块未做GC
+								ssd->non_gc_hdd_count++;
+							}
+							
+						}
+						
 					}
 					fprintf(ssd->outputfile,"the %d channel, %d chip, %d die, %d plane has : %13d erase operations\n",i,j,k,p,plane_erase);
 					fprintf(ssd->statisticfile,"the %d channel, %d chip, %d die, %d plane has : %13d erase operations\n",i,j,k,p,plane_erase);
@@ -1392,7 +1402,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"buffer write miss: %13d\n",ssd->dram->buffer->write_miss_hit);
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
-	fprintf(ssd->outputfile,"%2d, %13d, %13d, %18lld, %18lld\n", ssd->seq_num, ssd->gc_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count);
+	fprintf(ssd->outputfile,"%2d, %13d, %13d, %18lld, %18lld, %13d, %13d, %13d\n", ssd->seq_num, ssd->gc_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, ssd->update_hdd_count, ssd->non_gc_hdd_count, ssd->read_hdd_count);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);

@@ -238,6 +238,9 @@ struct ssd_info{
 	unsigned long read_count;
 	unsigned long program_count;
 	unsigned long erase_count;
+	unsigned long update_hdd_count; // 被打包page更新
+	unsigned long non_gc_hdd_count;   // 被打包块未做GC
+	unsigned long read_hdd_count; // 打包page被读
 	unsigned long gc_count;
 	unsigned long direct_erase_count;
 	unsigned long copy_back_count;

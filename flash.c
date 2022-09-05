@@ -1028,6 +1028,8 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		//是否从HDD读数据
 		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 		{
+			// 打包page被读
+			ssd->read_hdd_count++;
 			// 1. 从HDD读数据
 			int read_hdd_time = 0;
 			char *avg = exec_disksim_syssim(1, 1, 0);
