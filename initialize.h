@@ -25,6 +25,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include <ctype.h>
 #include <sys/types.h>
 #include "avlTree.h"
+#include "hash.h"
 
 #define SECTOR 512
 #define BUFSIZE 200
@@ -311,7 +312,8 @@ struct ssd_info{
 	struct event_node *event;            //事件队列，每产生一个新的事件，按照时间顺序加到这个队列，在simulate函数最后，根据这个队列队首的时间，确定时间
 	struct channel_info *channel_head;   //指向channel结构体数组的首地址
 
-
+	hash_t *hash_write; // 热写hash
+	hash_t *hash_read; // 热读hash
 	unsigned long long HDDTime;
 };//主要成员：①指向channel②指向dram③current_time系统当前时间④request_queue请求队列队首指针⑤request_tail请求队列队尾指针⑥统计：统计一些信息，如闪存写入次数，读取次数，外部请求到达个数
 

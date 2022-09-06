@@ -220,13 +220,26 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	//*********************************************
 	//ssd=simulate(ssd);
         srand((unsigned int)time(NULL));
+	ssd->hash_read = hash_new();
+	ssd->hash_write = hash_new();
+	hash_set(ssd->hash_read, "name", "tobi");
+	hash_set(ssd->hash_read, "species", "ferret");
+	hash_set(ssd->hash_write, "age", "2");
+	hash_each(ssd->hash_read, {
+		printf("%s: %s\n", key, (char *)val);
+	});
+	hash_each(ssd->hash_write, {
+		printf("%s: %s\n", key, (char *)val);
+	});
+
 	ssd=simulate_multiple(ssd, sTIMES); //核心处理函数，对ssd进行一个模拟能耗过程
 	statistic_output(ssd); //输出模拟后的结果
 /*	free_all_node(ssd);*/
 
 	printf("\n");
 	printf("the simulation is completed!\n");
-
+	hash_free(ssd->hash_write);
+	hash_free(ssd->hash_read);
 	return 1;
 /* 	_CrtDumpMemoryLeaks(); */
 }
@@ -1910,4 +1923,44 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 	return ssd;
 }
 
+/*
+ * Set hash `key` to `val`.
+ */
 
+inline void
+hash_set(hash_t *self, const char *key, void *val) {
+  int ret;
+  khiter_t k = kh_put(ptr, self, key, &ret);
+  kh_value(self, k) = val;
+}
+
+/*
+ * Get hash `key`, or NULL.
+ */
+
+inline void *
+hash_get(hash_t *self, const char *key) {
+  khiter_t k = kh_get(ptr, self, key);
+  return k == kh_end(self) ? NULL : kh_value(self, k);
+}
+
+/*
+ * Check if hash `key` exists.
+ */
+
+inline int
+hash_has(hash_t *self, const char *key) {
+  if(!hash_size(self)) return 0;
+  khiter_t k = kh_get(ptr, self, key);
+  return k != kh_end(self);
+}
+
+/*
+ * Remove hash `key`.
+ */
+
+void
+hash_del(hash_t *self, const char *key) {
+  khiter_t k = kh_get(ptr, self, key);
+  kh_del(ptr, self, k);
+}

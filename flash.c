@@ -900,6 +900,9 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
 	struct write_hot *write_hot = NULL;
+	char key[16];
+	sprintf(key,"%d",lpn);
+	hash_set(ssd->hash_write, key, lpn);
 	if (ssd->write_hot_tail == NULL)
 	{
 		printf("write-1 lpn:%d\n",lpn);
@@ -951,6 +954,8 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 				struct write_hot *temp = NULL;
 				temp = ssd->write_hot_head;
 				ssd->write_hot_head = ssd->write_hot_head->next;
+				sprintf(key,"%d",temp->lpn);
+				hash_del(ssd->hash_write, key);
 				free(temp);
 			}
 			else
@@ -1260,6 +1265,9 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct read_hot *read_hot = NULL;
 	read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
 	alloc_assert(read_hot, "read_hot");
+	char key[16];
+	sprintf(key,"%d",lpn);
+	hash_set(ssd->hash_read, key, lpn);
 	if (ssd->read_hot_tail == NULL)
 	{
 		printf("read-1 lpn:%d\n",lpn);
@@ -1317,6 +1325,8 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 				// abort();
 				temp = ssd->read_hot_head;
 				ssd->read_hot_head = ssd->read_hot_head->next;
+				sprintf(key,"%d",temp->lpn);
+				hash_del(ssd->hash_read, key);
 				free(temp);
 			}
 			else
