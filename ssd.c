@@ -172,8 +172,8 @@ int  main(int argc, char* argv[])
 	// make_aged(ssd);
 	// get_aged_ratio(ssd);
 	//warm_up
-	// pre_process_write_read(ssd);
-	// get_aged_ratio(ssd);
+	pre_process_write_read(ssd);
+	get_aged_ratio(ssd);
 	//读请求的预处理函数 页操作请求预处理函数
 	pre_process_page(ssd); 
 	get_aged_ratio(ssd);
