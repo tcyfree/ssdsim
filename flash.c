@@ -900,6 +900,8 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
 	struct write_hot *write_hot = NULL;
+	redisReply* reply;
+	reply = redisCommand(ssd->redis_conn, "SET w-%d %d", lpn, lpn);
 	if (ssd->write_hot_tail == NULL)
 	{
 		printf("write-1 lpn:%d\n",lpn);
@@ -951,6 +953,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 				struct write_hot *temp = NULL;
 				temp = ssd->write_hot_head;
 				ssd->write_hot_head = ssd->write_hot_head->next;
+				reply = redisCommand(ssd->redis_conn, "del w-%d", temp->lpn);   
 				free(temp);
 			}
 			else
@@ -963,6 +966,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 			ssd->write_hot_tail = write_hot;
 		}
 	}
+    freeReplyObject(reply); 
 }
 
 /**********************************************
@@ -1260,6 +1264,11 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct read_hot *read_hot = NULL;
 	read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
 	alloc_assert(read_hot, "read_hot");
+	redisReply* reply;
+	reply = redisCommand(ssd->redis_conn, "SET r-%d %d", lpn, lpn);
+	// printf("cmd set is %s lpn:%d\n",reply->str, lpn);
+	// reply = redisCommand(ssd->redis_conn, "get %d", lpn);  
+    // printf("get: %s\n", reply->str); 
 	if (ssd->read_hot_tail == NULL)
 	{
 		printf("read-1 lpn:%d\n",lpn);
@@ -1317,6 +1326,8 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 				// abort();
 				temp = ssd->read_hot_head;
 				ssd->read_hot_head = ssd->read_hot_head->next;
+				reply = redisCommand(ssd->redis_conn, "del r-%d", temp->lpn);  
+				// printf("cmd del is %d lpn:%d\n",reply->integer, temp->lpn);
 				free(temp);
 			}
 			else
@@ -1330,6 +1341,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 			// printf("new tail lpn:%d\n", ssd->read_hot_tail->lpn);
 		}
 	}
+    freeReplyObject(reply); 
 }
 
 /**

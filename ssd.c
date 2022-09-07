@@ -220,13 +220,25 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	//*********************************************
 	//ssd=simulate(ssd);
         srand((unsigned int)time(NULL));
+	//连接Redis，并赋值给全局
+	redisContext *conn = redisConnect("127.0.0.1", 6379);
+	if (conn->err) {
+		printf("connection error:%s\n", conn->errstr);
+	}
+	ssd->redis_conn = conn;
+	//初始化redis
+	// redisReply* reply = redisCommand(ssd->redis_conn, "zcard read-hot");  
+	// redisCommand(ssd->redis_conn, "del read-hot");
+	// redisCommand(ssd->redis_conn, "del write-hot");
+    // freeReplyObject(reply);
 	ssd=simulate_multiple(ssd, sTIMES); //核心处理函数，对ssd进行一个模拟能耗过程
 	statistic_output(ssd); //输出模拟后的结果
 /*	free_all_node(ssd);*/
 
 	printf("\n");
 	printf("the simulation is completed!\n");
-
+	//释放连接
+	redisFree(conn);  
 	return 1;
 /* 	_CrtDumpMemoryLeaks(); */
 }

@@ -2302,6 +2302,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 	// 第三类是普通Page，即在GC时直接写入到HDD中，将SSD中的Page擦除，增加SSD的有效空间；
 	// 最后一类是冷写热读的Page，GC时通过Page move保留在SSD中，GC完成后也不增加SSD的有效空间。
 	float t = 0;
+	redisReply* reply;
 	for (i = 0; i < ssd->parameter->block_plane; i++)
 	{
 		float t_i = 0;
@@ -2332,27 +2333,39 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					int hot_r = 0;
 					int hot_w = 0;
 					//查找热读
-					while (r_hot_q)
+					reply = redisCommand(ssd->redis_conn, "GET r-%d", lpn); 
+					// printf("r-hot:%s %d %d\n", reply->str,reply->len, lpn);
+					if (reply->len)
 					{
-						if (r_hot_q->lpn == lpn)
-						{
-							// printf("hot_read lpn %d\n", lpn);
-							hot_r = 1;
-							break;
-						}
-						r_hot_q = r_hot_q->next;
-					}
+						hot_r = 1;
+					}					
+					// while (r_hot_q)
+					// {
+					// 	if (r_hot_q->lpn == lpn)
+					// 	{
+					// 		// printf("hot_read lpn %d\n", lpn);
+					// 		hot_r = 1;
+					// 		break;
+					// 	}
+					// 	r_hot_q = r_hot_q->next;
+					// }
 					//查找热写
-					while (w_hot_q)
+					reply = redisCommand(ssd->redis_conn, "GET w-%d", lpn); 
+					// printf("r-hot:%s %d %d\n", reply->str,reply->len, lpn);
+					if (reply->len)
 					{
-						if (w_hot_q->lpn == lpn)
-						{
-							// printf("hot_write lpn %d\n", lpn);
-							hot_w = 1;
-							break;
-						}
-						w_hot_q = w_hot_q->next;
+						hot_w = 1;
 					}
+					// while (w_hot_q)
+					// {
+					// 	if (w_hot_q->lpn == lpn)
+					// 	{
+					// 		// printf("hot_write lpn %d\n", lpn);
+					// 		hot_w = 1;
+					// 		break;
+					// 	}
+					// 	w_hot_q = w_hot_q->next;
+					// }
 					if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
 					{
 						if (hot_r == 0)
@@ -2375,6 +2388,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 			}
 		}
 	}
+    freeReplyObject(reply); 
 	if (t < 1)
 	{
 		// printf("block %d t %f\n", block, t);
@@ -2441,6 +2455,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	struct local *location_check = NULL;
 	if (ssd->is_sequential == 1)
 	{
+		redisReply* reply;
 		int arr[1024], l = 0;
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
@@ -2519,25 +2534,35 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					r_hot_q = ssd->read_hot_head;
 					w_hot_q = ssd->write_hot_head;
 					//查找热读
-					while (r_hot_q)
+					reply = redisCommand(ssd->redis_conn, "GET r-%d", lpn); 
+					if (reply->len)
 					{
-						if (r_hot_q->lpn == j)
-						{
-							hot_r = 1;
-							break;
-						}
-						r_hot_q = r_hot_q->next;
+						hot_r = 1;
 					}
+					// while (r_hot_q)
+					// {
+					// 	if (r_hot_q->lpn == j)
+					// 	{
+					// 		hot_r = 1;
+					// 		break;
+					// 	}
+					// 	r_hot_q = r_hot_q->next;
+					// }
 					//查找热写
-					while (w_hot_q)
+					reply = redisCommand(ssd->redis_conn, "GET w-%d", lpn); 
+					if (reply->len)
 					{
-						if (w_hot_q->lpn == j)
-						{
-							hot_w = 1;
-							break;
-						}
-						w_hot_q = w_hot_q->next;
+						hot_w = 1;
 					}
+					// while (w_hot_q)
+					// {
+					// 	if (w_hot_q->lpn == j)
+					// 	{
+					// 		hot_w = 1;
+					// 		break;
+					// 	}
+					// 	w_hot_q = w_hot_q->next;
+					// }
 					//查找的page是否是当前块
 					//机制1：针对第一类Page，执行GC时只将存在于热读列表中同时不在热写列表中的数据保留在SSD中，而将其他数据写入到HDD中。
 					if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
@@ -2592,25 +2617,35 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			r_hot_q = ssd->read_hot_head;
 			w_hot_q = ssd->write_hot_head;
 			//查找热读
-			while (r_hot_q)
+			reply = redisCommand(ssd->redis_conn, "GET r-%d", lpn);
+			if (reply->len)
 			{
-				if (r_hot_q->lpn == arr[i])
-				{
-					hot_r = 1;
-					break;
-				}
-				r_hot_q = r_hot_q->next;
+				hot_r = 1;
 			}
+			// while (r_hot_q)
+			// {
+			// 	if (r_hot_q->lpn == arr[i])
+			// 	{
+			// 		hot_r = 1;
+			// 		break;
+			// 	}
+			// 	r_hot_q = r_hot_q->next;
+			// }
 			//查找热写
-			while (w_hot_q)
+			reply = redisCommand(ssd->redis_conn, "GET w-%d", lpn);
+			if (reply->len)
 			{
-				if (w_hot_q->lpn == arr[i])
-				{
-					hot_w = 1;
-					break;
-				}
-				w_hot_q = w_hot_q->next;
+				hot_w = 1;
 			}
+			// while (w_hot_q)
+			// {
+			// 	if (w_hot_q->lpn == arr[i])
+			// 	{
+			// 		hot_w = 1;
+			// 		break;
+			// 	}
+			// 	w_hot_q = w_hot_q->next;
+			// }
 			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
 			location = (struct local *)malloc(sizeof(struct local));
 			alloc_assert(location, "location");
@@ -2661,6 +2696,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			}
 			times = 0;
 		}
+    	freeReplyObject(reply); 
 	}
 	//related work
 	else if (ssd->is_sequential == 2)
