@@ -899,70 +899,161 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
  */
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
-	struct write_hot *write_hot = NULL;
-	if (ssd->write_hot_tail == NULL)
-	{
-		printf("write-1 lpn:%d\n",lpn);
-		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
-		alloc_assert(write_hot, "write_hot");
-		write_hot->lpn = lpn;
-		write_hot->next = NULL;
-		ssd->write_hot_tail = write_hot;
-		ssd->write_hot_head = write_hot;
-		ssd->write_hot_queue_length = 1;
-	}
-	else
-	{
-		write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
-		alloc_assert(write_hot, "write_hot");
-		struct write_hot *hot = ssd->write_hot_head;
-		struct write_hot *pre = NULL;
-		int flag = 0;
-		//该lpn是否已经存在在队了
-		// while (hot)
-		// {
-		// 	if (hot->lpn == lpn)
-		// 	{
-		// 		//说明是头
-		// 		if (pre == NULL)
-		// 		{
-		// 			ssd->write_hot_head = ssd->write_hot_head->next; 
-		// 		}else
-		// 		{
-		// 			pre->next = pre->next->next;
-		// 		}
-		// 		//移动到队尾
-		// 		ssd->write_hot_tail->next = hot;
-		// 		hot->next = NULL;
-		// 		ssd->write_hot_tail = hot;
-		// 		flag = 1;
-		// 		break;
-		// 	}
-		// 	pre = hot;
-		// 	hot = hot->next;
-		// }
+	int flag=0;                                                             /*flag表示为写入新数据腾空间是否完成，0表示需要进一步腾，1表示已经腾空*/
+	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
+	unsigned int lsn;
+	key.group=lpn;//记录当前的lpn
+	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
-		if (flag == 0)
+	/************************************************************************************************
+	 *没有命中。
+	 *否则，没有多余的空间供lpn子请求写，这时需要释放一部分空间
+	 *************************************************************************************************/
+	if (buffer_node == NULL) //未命中（缓存里没有以前版本的数据，即不是在缓存里的更新操作）
+	{
+		int avl_count = avlTreeCount(ssd->avl_write->buffer);
+		// printf("avl-count:%d\n", avl_count);
+		if (avl_count < HOT_QUEUE_LEN)
 		{
-			// printf("new write lpn:%d\n",lpn);
-			if (ssd->write_hot_queue_length > HOT_QUEUE_LEN)
+			flag = 1; //空间足够，可以直接写进缓存，不需要腾空间
+		}
+		if (flag == 0) //若空间不够
+		{
+			/*********************************************************************
+				 *写请求插入到了平衡二叉树，这时就要修改avl_write的buffer_sector_count；
+				 *维持平衡二叉树调用avlTreeDel()和AVL_TREENODE_FREE()函数；维持LRU算法；
+			**********************************************************************/
+			pt = ssd->avl_write->buffer->buffer_tail;
+			avlTreeDel(ssd->avl_write->buffer, (TREE_NODE *)pt);
+			if (ssd->avl_write->buffer->buffer_head->LRU_link_next == NULL)
 			{
-				// printf("len:%d\n", ssd->write_hot_queue_length);
-				struct write_hot *temp = NULL;
-				temp = ssd->write_hot_head;
-				ssd->write_hot_head = ssd->write_hot_head->next;
-				free(temp);
+				ssd->avl_write->buffer->buffer_head = NULL;
+				ssd->avl_write->buffer->buffer_tail = NULL;
 			}
 			else
 			{
-				ssd->write_hot_queue_length++;
+				ssd->avl_write->buffer->buffer_tail = ssd->avl_write->buffer->buffer_tail->LRU_link_pre;
+				ssd->avl_write->buffer->buffer_tail->LRU_link_next = NULL;
 			}
-			write_hot->lpn = lpn;
-			write_hot->next = NULL;
-			ssd->write_hot_tail->next = write_hot;
-			ssd->write_hot_tail = write_hot;
+			pt->LRU_link_next = NULL;
+			pt->LRU_link_pre = NULL;
+			AVL_TREENODE_FREE(ssd->avl_write->buffer, (TREE_NODE *)pt);
+			pt = NULL;
+		}
+
+		/******************************************************************************
+		 *生成一个buffer node，根据这个页的情况分别赋值个各个成员，添加到队首和二叉树中
+		 *******************************************************************************/
+		new_node = NULL;
+		new_node = (struct buffer_group *)malloc(sizeof(struct buffer_group));
+		alloc_assert(new_node, "buffer_group_node");
+		memset(new_node, 0, sizeof(struct buffer_group));
+
+		new_node->group = lpn;		   //把该lpn设置为缓存新节点
+		new_node->LRU_link_pre = NULL;
+		new_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; //新节点插到队头
+		if (ssd->avl_write->buffer->buffer_head != NULL)
+		{ //有队头，就插到队头前面
+			ssd->avl_write->buffer->buffer_head->LRU_link_pre = new_node;
+		}
+		else
+		{ //没有队头，该节点就是队头,同时也是队尾。因为队列就一个节点
+			ssd->avl_write->buffer->buffer_tail = new_node;
+		}
+		ssd->avl_write->buffer->buffer_head = new_node;
+		new_node->LRU_link_pre = NULL;
+		avlTreeAdd(ssd->avl_write->buffer, (TREE_NODE *)new_node);
+	}
+	/****************************************************************************************
+	 *在buffer中命中的情况
+	 *虽然命中了，但是命中的只是lpn，有可能新来的写请求，只是需要写lpn这一page的某几个sub_page
+	 *这时有需要进一步的判断
+	 *****************************************************************************************/
+	else
+	{
+		if (ssd->avl_write->buffer->buffer_head != buffer_node)
+		{
+			if (ssd->avl_write->buffer->buffer_tail == buffer_node)
+			{
+				ssd->avl_write->buffer->buffer_tail = buffer_node->LRU_link_pre;
+				buffer_node->LRU_link_pre->LRU_link_next = NULL;
+			}
+			else if (buffer_node != ssd->avl_write->buffer->buffer_head)
+			{
+				buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+				buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+			}
+			//将该节点移到buffer的队首
+			buffer_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; //双向链表重新设置队头 的后继设置
+			ssd->avl_write->buffer->buffer_head->LRU_link_pre = buffer_node;	 //双向链表重新设置队头 的前驱设置
+			buffer_node->LRU_link_pre = NULL;
+			ssd->avl_write->buffer->buffer_head = buffer_node;
 		}
 	}
+	// struct write_hot *write_hot = NULL;
+	// if (ssd->write_hot_tail == NULL)
+	// {
+	// 	printf("write-1 lpn:%d\n",lpn);
+	// 	write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+	// 	alloc_assert(write_hot, "write_hot");
+	// 	write_hot->lpn = lpn;
+	// 	write_hot->next = NULL;
+	// 	ssd->write_hot_tail = write_hot;
+	// 	ssd->write_hot_head = write_hot;
+	// 	ssd->write_hot_queue_length = 1;
+	// }
+	// else
+	// {
+	// 	write_hot = (struct write_hot *)malloc(sizeof(struct write_hot));
+	// 	alloc_assert(write_hot, "write_hot");
+	// 	struct write_hot *hot = ssd->write_hot_head;
+	// 	struct write_hot *pre = NULL;
+	// 	int flag = 0;
+	// 	//该lpn是否已经存在在队了
+	// 	// while (hot)
+	// 	// {
+	// 	// 	if (hot->lpn == lpn)
+	// 	// 	{
+	// 	// 		//说明是头
+	// 	// 		if (pre == NULL)
+	// 	// 		{
+	// 	// 			ssd->write_hot_head = ssd->write_hot_head->next; 
+	// 	// 		}else
+	// 	// 		{
+	// 	// 			pre->next = pre->next->next;
+	// 	// 		}
+	// 	// 		//移动到队尾
+	// 	// 		ssd->write_hot_tail->next = hot;
+	// 	// 		hot->next = NULL;
+	// 	// 		ssd->write_hot_tail = hot;
+	// 	// 		flag = 1;
+	// 	// 		break;
+	// 	// 	}
+	// 	// 	pre = hot;
+	// 	// 	hot = hot->next;
+	// 	// }
+
+	// 	if (flag == 0)
+	// 	{
+	// 		// printf("new write lpn:%d\n",lpn);
+	// 		if (ssd->write_hot_queue_length > HOT_QUEUE_LEN)
+	// 		{
+	// 			// printf("len:%d\n", ssd->write_hot_queue_length);
+	// 			struct write_hot *temp = NULL;
+	// 			temp = ssd->write_hot_head;
+	// 			ssd->write_hot_head = ssd->write_hot_head->next;
+	// 			free(temp);
+	// 		}
+	// 		else
+	// 		{
+	// 			ssd->write_hot_queue_length++;
+	// 		}
+	// 		write_hot->lpn = lpn;
+	// 		write_hot->next = NULL;
+	// 		ssd->write_hot_tail->next = write_hot;
+	// 		ssd->write_hot_tail = write_hot;
+	// 	}
+	// }
 }
 
 /**********************************************
@@ -1257,24 +1348,20 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
  */
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 {
-	int write_back_count,flag=0;                                                             /*flag表示为写入新数据腾空间是否完成，0表示需要进一步腾，1表示已经腾空*/
+	int flag=0;                                                             /*flag表示为写入新数据腾空间是否完成，0表示需要进一步腾，1表示已经腾空*/
 	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
-	unsigned int i,lsn,hit_flag,add_flag,sector_count,active_region_flag=0,free_sector=0;
+	unsigned int lsn;
 	key.group=lpn;//记录当前的lpn
-	buffer_node= (struct buffer_group*)avlTreeFind(ssd->hash->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
+	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
 	/************************************************************************************************
 	 *没有命中。
-	 *第一步根据这个lpn有多少子页需要写到buffer，去除已写回的lsn，为该lpn腾出位置，
-	 *首先即要计算出free sector（表示还有多少可以直接写的buffer节点）。
-	 *如果free_sector>=sector_count，即有多余的空间够lpn子请求写，不需要产生写回请求
-	 *否则，没有多余的空间供lpn子请求写，这时需要释放一部分空间，产生写回请求。就要creat_sub_request()
+	 *否则，没有多余的空间供lpn子请求写，这时需要释放一部分空间
 	 *************************************************************************************************/
 	if (buffer_node == NULL) //未命中（缓存里没有以前版本的数据，即不是在缓存里的更新操作）
 	{
-		free_sector = ssd->hash->buffer->max_buffer_sector - ssd->hash->buffer->buffer_sector_count; //计算缓存里有多少空闲空间
-		int avl_count = avlTreeCount(ssd->hash->buffer);
-		printf("avl-count:%d\n", avl_count);
+		int avl_count = avlTreeCount(ssd->avl_read->buffer);
+		// printf("avl-count:%d\n", avl_count);
 		if (avl_count < HOT_QUEUE_LEN)
 		{
 			flag = 1; //空间足够，可以直接写进缓存，不需要腾空间
@@ -1282,24 +1369,24 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		if (flag == 0) //若空间不够
 		{
 			/*********************************************************************
-				 *写请求插入到了平衡二叉树，这时就要修改hash的buffer_sector_count；
+				 *写请求插入到了平衡二叉树，这时就要修改avl_read的buffer_sector_count；
 				 *维持平衡二叉树调用avlTreeDel()和AVL_TREENODE_FREE()函数；维持LRU算法；
 			**********************************************************************/
-			pt = ssd->hash->buffer->buffer_tail;
-			avlTreeDel(ssd->hash->buffer, (TREE_NODE *)pt);
-			if (ssd->hash->buffer->buffer_head->LRU_link_next == NULL)
+			pt = ssd->avl_read->buffer->buffer_tail;
+			avlTreeDel(ssd->avl_read->buffer, (TREE_NODE *)pt);
+			if (ssd->avl_read->buffer->buffer_head->LRU_link_next == NULL)
 			{
-				ssd->hash->buffer->buffer_head = NULL;
-				ssd->hash->buffer->buffer_tail = NULL;
+				ssd->avl_read->buffer->buffer_head = NULL;
+				ssd->avl_read->buffer->buffer_tail = NULL;
 			}
 			else
 			{
-				ssd->hash->buffer->buffer_tail = ssd->hash->buffer->buffer_tail->LRU_link_pre;
-				ssd->hash->buffer->buffer_tail->LRU_link_next = NULL;
+				ssd->avl_read->buffer->buffer_tail = ssd->avl_read->buffer->buffer_tail->LRU_link_pre;
+				ssd->avl_read->buffer->buffer_tail->LRU_link_next = NULL;
 			}
 			pt->LRU_link_next = NULL;
 			pt->LRU_link_pre = NULL;
-			AVL_TREENODE_FREE(ssd->hash->buffer, (TREE_NODE *)pt);
+			AVL_TREENODE_FREE(ssd->avl_read->buffer, (TREE_NODE *)pt);
 			pt = NULL;
 		}
 
@@ -1313,18 +1400,18 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 
 		new_node->group = lpn;		   //把该lpn设置为缓存新节点
 		new_node->LRU_link_pre = NULL;
-		new_node->LRU_link_next = ssd->hash->buffer->buffer_head; //新节点插到队头
-		if (ssd->hash->buffer->buffer_head != NULL)
+		new_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; //新节点插到队头
+		if (ssd->avl_read->buffer->buffer_head != NULL)
 		{ //有队头，就插到队头前面
-			ssd->hash->buffer->buffer_head->LRU_link_pre = new_node;
+			ssd->avl_read->buffer->buffer_head->LRU_link_pre = new_node;
 		}
 		else
 		{ //没有队头，该节点就是队头,同时也是队尾。因为队列就一个节点
-			ssd->hash->buffer->buffer_tail = new_node;
+			ssd->avl_read->buffer->buffer_tail = new_node;
 		}
-		ssd->hash->buffer->buffer_head = new_node;
+		ssd->avl_read->buffer->buffer_head = new_node;
 		new_node->LRU_link_pre = NULL;
-		avlTreeAdd(ssd->hash->buffer, (TREE_NODE *)new_node);
+		avlTreeAdd(ssd->avl_read->buffer, (TREE_NODE *)new_node);
 	}
 	/****************************************************************************************
 	 *在buffer中命中的情况
@@ -1333,105 +1420,99 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	 *****************************************************************************************/
 	else
 	{
-		if (ssd->hash->buffer->buffer_head != buffer_node)
+		if (ssd->avl_read->buffer->buffer_head != buffer_node)
 		{
-			if (ssd->hash->buffer->buffer_tail == buffer_node)
+			if (ssd->avl_read->buffer->buffer_tail == buffer_node)
 			{
-				ssd->hash->buffer->buffer_tail = buffer_node->LRU_link_pre;
+				ssd->avl_read->buffer->buffer_tail = buffer_node->LRU_link_pre;
 				buffer_node->LRU_link_pre->LRU_link_next = NULL;
 			}
-			else if (buffer_node != ssd->hash->buffer->buffer_head)
+			else if (buffer_node != ssd->avl_read->buffer->buffer_head)
 			{
 				buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
 				buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
 			}
 			//将该节点移到buffer的队首
-			buffer_node->LRU_link_next = ssd->hash->buffer->buffer_head; //双向链表重新设置队头 的后继设置
-			ssd->hash->buffer->buffer_head->LRU_link_pre = buffer_node;	 //双向链表重新设置队头 的前驱设置
+			buffer_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; //双向链表重新设置队头 的后继设置
+			ssd->avl_read->buffer->buffer_head->LRU_link_pre = buffer_node;	 //双向链表重新设置队头 的前驱设置
 			buffer_node->LRU_link_pre = NULL;
-			ssd->hash->buffer->buffer_head = buffer_node;
+			ssd->avl_read->buffer->buffer_head = buffer_node;
 		}
-	}
-	struct buffer_group * buffer_group = ssd->hash->buffer->buffer_head;
-	while (buffer_group)
-	{
-		printf("avl-lpn:%d\n", buffer_group->group);
-		buffer_group->LRU_link_next = buffer_group->LRU_link_next->LRU_link_next;
 	}
 
-	struct read_hot *read_hot = NULL;
-	read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
-	alloc_assert(read_hot, "read_hot");
-	if (ssd->read_hot_tail == NULL)
-	{
-		printf("read-1 lpn:%d\n",lpn);
-		read_hot->lpn = lpn;
-		read_hot->next = NULL;
-		ssd->read_hot_tail = read_hot;
-		ssd->read_hot_head = read_hot;
-		ssd->read_hot_queue_length = 1;
-	}
-	else
-	{
-		struct read_hot *hot = ssd->read_hot_head;
-		struct read_hot *pre = NULL;
-		int flag = 0;
-		//该lpn是否已经存在在队了
-		// while (hot)
-		// {
-		// 	printf("hot lpn %d\n", hot->lpn);
-		// 	if (hot->lpn == lpn)
-		// 	{
-		// 		printf("exits lpn:%d\n",lpn);
-		// 		//说明是头
-		// 		if (pre == NULL)
-		// 		{
-		// 			ssd->read_hot_head = ssd->read_hot_head->next; 
-		// 		}else
-		// 		{
-		// 			pre->next = pre->next->next;
-		// 		}
-		// 		//移动到队尾
-		// 		read_hot->lpn = lpn;
-		// 		read_hot->next = NULL;
-		// 		ssd->read_hot_tail->next = read_hot;
-		// 		ssd->read_hot_tail = read_hot;
-		// 		flag = 1;
-		// 		break;
-		// 	}
-		// 	pre = hot;
-		// 	hot = hot->next;
-		// }
-		if (flag == 0)
-		{
-			// printf("new lpn:%d\n",lpn);
-			if (ssd->read_hot_queue_length > HOT_QUEUE_LEN)
-			{
-				struct read_hot *temp = NULL;
-				temp = ssd->read_hot_head;
-				// printf("len:%d\n", ssd->read_hot_queue_length);
-				// while (temp)
-				// {
-				// 	printf("lpn:%d\n",temp->lpn);
-				// 	temp = temp->next;
-				// }
-				// printf("delete lpn:%d %d\n",ssd->read_hot_head->lpn,lpn);
-				// abort();
-				temp = ssd->read_hot_head;
-				ssd->read_hot_head = ssd->read_hot_head->next;
-				free(temp);
-			}
-			else
-			{
-				ssd->read_hot_queue_length++;
-			}
-			read_hot->lpn = lpn;
-			read_hot->next = NULL;
-			ssd->read_hot_tail->next = read_hot;
-			ssd->read_hot_tail = read_hot;
-			// printf("new tail lpn:%d\n", ssd->read_hot_tail->lpn);
-		}
-	}
+	// struct read_hot *read_hot = NULL;
+	// read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
+	// alloc_assert(read_hot, "read_hot");
+	// if (ssd->read_hot_tail == NULL)
+	// {
+	// 	printf("read-1 lpn:%d\n",lpn);
+	// 	read_hot->lpn = lpn;
+	// 	read_hot->next = NULL;
+	// 	ssd->read_hot_tail = read_hot;
+	// 	ssd->read_hot_head = read_hot;
+	// 	ssd->read_hot_queue_length = 1;
+	// }
+	// else
+	// {
+	// 	struct read_hot *hot = ssd->read_hot_head;
+	// 	struct read_hot *pre = NULL;
+	// 	int flag = 0;
+	// 	//该lpn是否已经存在在队了
+	// 	// while (hot)
+	// 	// {
+	// 	// 	printf("hot lpn %d\n", hot->lpn);
+	// 	// 	if (hot->lpn == lpn)
+	// 	// 	{
+	// 	// 		printf("exits lpn:%d\n",lpn);
+	// 	// 		//说明是头
+	// 	// 		if (pre == NULL)
+	// 	// 		{
+	// 	// 			ssd->read_hot_head = ssd->read_hot_head->next; 
+	// 	// 		}else
+	// 	// 		{
+	// 	// 			pre->next = pre->next->next;
+	// 	// 		}
+	// 	// 		//移动到队尾
+	// 	// 		read_hot->lpn = lpn;
+	// 	// 		read_hot->next = NULL;
+	// 	// 		ssd->read_hot_tail->next = read_hot;
+	// 	// 		ssd->read_hot_tail = read_hot;
+	// 	// 		flag = 1;
+	// 	// 		break;
+	// 	// 	}
+	// 	// 	pre = hot;
+	// 	// 	hot = hot->next;
+	// 	// }
+	// 	if (flag == 0)
+	// 	{
+	// 		// printf("new lpn:%d\n",lpn);
+	// 		if (ssd->read_hot_queue_length > HOT_QUEUE_LEN)
+	// 		{
+	// 			struct read_hot *temp = NULL;
+	// 			temp = ssd->read_hot_head;
+	// 			// printf("len:%d\n", ssd->read_hot_queue_length);
+	// 			// while (temp)
+	// 			// {
+	// 			// 	printf("lpn:%d\n",temp->lpn);
+	// 			// 	temp = temp->next;
+	// 			// }
+	// 			// printf("delete lpn:%d %d\n",ssd->read_hot_head->lpn,lpn);
+	// 			// abort();
+	// 			temp = ssd->read_hot_head;
+	// 			ssd->read_hot_head = ssd->read_hot_head->next;
+	// 			free(temp);
+	// 		}
+	// 		else
+	// 		{
+	// 			ssd->read_hot_queue_length++;
+	// 		}
+	// 		read_hot->lpn = lpn;
+	// 		read_hot->next = NULL;
+	// 		ssd->read_hot_tail->next = read_hot;
+	// 		ssd->read_hot_tail = read_hot;
+	// 		// printf("new tail lpn:%d\n", ssd->read_hot_tail->lpn);
+	// 	}
+	// }
 }
 
 /**

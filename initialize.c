@@ -60,6 +60,27 @@ extern int freeFunc(TREE_NODE *pNode)
 	return 1;
 }
 
+struct avl_write_info * initialize_avl_write(struct ssd_info * ssd)
+{
+	unsigned int page_num;
+	struct avl_write_info *avl_write=ssd->avl_write;
+	avl_write->dram_capacity = 131074;
+	avl_write->buffer = (tAVLTree *)avlTreeCreate((void*)keyCompareFunc , (void *)freeFunc);
+	avl_write->buffer->max_buffer_sector=avl_write->dram_capacity/SECTOR; //512
+
+	return avl_write;
+}
+
+struct avl_read_info * initialize_avl_read(struct ssd_info * ssd)
+{
+	unsigned int page_num;
+	struct avl_read_info *avl_read=ssd->avl_read;
+	avl_read->dram_capacity = 131074;
+	avl_read->buffer = (tAVLTree *)avlTreeCreate((void*)keyCompareFunc , (void *)freeFunc);
+	avl_read->buffer->max_buffer_sector=avl_read->dram_capacity/SECTOR; //512
+
+	return avl_read;
+}
 
 /**********   initiation   ******************
 *modify by zhouwen
@@ -119,11 +140,18 @@ struct ssd_info *initiation(struct ssd_info *ssd)
 	alloc_assert(ssd->dram,"ssd->dram");
 	memset(ssd->dram,0,sizeof(struct dram_info));
 	initialize_dram(ssd);
-	//初始化 hash
-	ssd->hash = (struct hash_info *)malloc(sizeof(struct hash_info));
-	alloc_assert(ssd->hash,"ssd->hash");
-	memset(ssd->hash,0,sizeof(struct hash_info));
-	initialize_hash(ssd);
+
+	//初始化 avl_read
+	ssd->avl_read = (struct avl_read_info *)malloc(sizeof(struct avl_read_info));
+	alloc_assert(ssd->avl_read,"ssd->avl_read");
+	memset(ssd->avl_read,0,sizeof(struct avl_read_info));
+	initialize_avl_read(ssd);
+
+	//初始化 avl_write
+	ssd->avl_write = (struct avl_write_info *)malloc(sizeof(struct avl_write_info));
+	alloc_assert(ssd->avl_write,"ssd->avl_write");
+	memset(ssd->avl_write,0,sizeof(struct avl_write_info));
+	initialize_avl_write(ssd);
 
 	//初始化通道
 	ssd->channel_head=(struct channel_info*)malloc(ssd->parameter->channel_number * sizeof(struct channel_info));
@@ -285,17 +313,6 @@ struct dram_info * initialize_dram(struct ssd_info * ssd)
 	memset(dram->map->map_entry,0,sizeof(struct entry) * page_num);
 
 	return dram;
-}
-
-struct hash_info * initialize_hash(struct ssd_info * ssd)
-{
-	unsigned int page_num;
-	struct hash_info *hash=ssd->hash;
-	hash->dram_capacity = 131074;
-	hash->buffer = (tAVLTree *)avlTreeCreate((void*)keyCompareFunc , (void *)freeFunc);
-	hash->buffer->max_buffer_sector=hash->dram_capacity/SECTOR; //512
-
-	return hash;
 }
 
 struct page_info * initialize_page(struct page_info * p_page )

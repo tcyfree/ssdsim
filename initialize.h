@@ -291,7 +291,8 @@ struct ssd_info{
 
     struct parameter_value *parameter;   //SSD参数因子
 	struct dram_info *dram;
-	struct hash_info *hash;
+	struct avl_read_info *avl_read; // 热读avl
+	struct avl_write_info *avl_write; //热写avl
 	struct read_hot *read_queue;
 	struct read_hot *read_hot_head;
 	struct read_hot *read_hot_tail;
@@ -436,14 +437,15 @@ struct dram_info{
 
 };
 
-struct hash_info{
+struct avl_read_info{
 	unsigned int dram_capacity;
-	int64_t current_time;
-
-	struct dram_parameter *dram_paramters;
-	struct map_info *map;
 	struct buffer_info *buffer;
 
+};
+
+struct avl_write_info{
+	unsigned int dram_capacity;
+	struct buffer_info *buffer;
 };
 
 
