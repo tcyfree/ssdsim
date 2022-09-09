@@ -743,6 +743,7 @@ struct die_info * initialize_die(struct die_info * p_die,struct parameter_value 
 struct chip_info * initialize_chip(struct chip_info * p_chip,struct parameter_value *parameter,long long current_time );
 struct ssd_info * initialize_channels(struct ssd_info * ssd );
 struct dram_info * initialize_dram(struct ssd_info * ssd);
+struct hash_info * initialize_hash(struct ssd_info * ssd);
 
 #endif
 

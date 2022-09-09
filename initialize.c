@@ -119,10 +119,11 @@ struct ssd_info *initiation(struct ssd_info *ssd)
 	alloc_assert(ssd->dram,"ssd->dram");
 	memset(ssd->dram,0,sizeof(struct dram_info));
 	initialize_dram(ssd);
-
-	//Hash search
-	ssd->hash = (tAVLTree *)avlTreeCreate((void *)keyCompareFunc, (void *)freeFunc);
-	ssd->hash->buffer->max_buffer_sector = 131074 / SECTOR;	
+	//初始化 hash
+	ssd->hash = (struct hash_info *)malloc(sizeof(struct hash_info));
+	alloc_assert(ssd->hash,"ssd->hash");
+	memset(ssd->hash,0,sizeof(struct hash_info));
+	initialize_hash(ssd);
 
 	//初始化通道
 	ssd->channel_head=(struct channel_info*)malloc(ssd->parameter->channel_number * sizeof(struct channel_info));
@@ -284,6 +285,27 @@ struct dram_info * initialize_dram(struct ssd_info * ssd)
 	memset(dram->map->map_entry,0,sizeof(struct entry) * page_num);
 
 	return dram;
+}
+
+struct hash_info * initialize_hash(struct ssd_info * ssd)
+{
+	unsigned int page_num;
+	struct hash_info *hash=ssd->hash;
+	hash->dram_capacity = 131074;
+	hash->buffer = (tAVLTree *)avlTreeCreate((void*)keyCompareFunc , (void *)freeFunc);
+	hash->buffer->max_buffer_sector=hash->dram_capacity/SECTOR; //512
+
+	hash->map = (struct map_info *)malloc(sizeof(struct map_info));
+	alloc_assert(hash->map,"hash->map");
+	memset(hash->map,0, sizeof(struct map_info));
+
+	page_num = ssd->parameter->page_block*ssd->parameter->block_plane*ssd->parameter->plane_die*ssd->parameter->die_chip*ssd->parameter->chip_num;
+
+	hash->map->map_entry = (struct entry *)malloc(sizeof(struct entry) * page_num); //每个物理页和逻辑页都有对应关系
+	alloc_assert(hash->map->map_entry,"hash->map->map_entry");
+	memset(hash->map->map_entry,0,sizeof(struct entry) * page_num);
+
+	return hash;
 }
 
 struct page_info * initialize_page(struct page_info * p_page )
