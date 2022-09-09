@@ -291,6 +291,7 @@ struct ssd_info{
 
     struct parameter_value *parameter;   //SSD参数因子
 	struct dram_info *dram;
+	struct hash_info *hash;
 	struct read_hot *read_queue;
 	struct read_hot *read_hot_head;
 	struct read_hot *read_hot_tail;
@@ -426,6 +427,16 @@ struct page_info{                      //lpn记录该物理页存储的逻辑页
 
 
 struct dram_info{
+	unsigned int dram_capacity;
+	int64_t current_time;
+
+	struct dram_parameter *dram_paramters;
+	struct map_info *map;
+	struct buffer_info *buffer;
+
+};
+
+struct hash_info{
 	unsigned int dram_capacity;
 	int64_t current_time;
 

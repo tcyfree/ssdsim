@@ -120,6 +120,10 @@ struct ssd_info *initiation(struct ssd_info *ssd)
 	memset(ssd->dram,0,sizeof(struct dram_info));
 	initialize_dram(ssd);
 
+	//Hash search
+	ssd->hash = (tAVLTree *)avlTreeCreate((void *)keyCompareFunc, (void *)freeFunc);
+	ssd->hash->buffer->max_buffer_sector = 131074 / SECTOR;	
+
 	//初始化通道
 	ssd->channel_head=(struct channel_info*)malloc(ssd->parameter->channel_number * sizeof(struct channel_info));
 	alloc_assert(ssd->channel_head,"ssd->channel_head");
