@@ -1274,6 +1274,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	{
 		free_sector = ssd->hash->buffer->max_buffer_sector - ssd->hash->buffer->buffer_sector_count; //计算缓存里有多少空闲空间
 		int avl_count = avlTreeCount(ssd->hash->buffer);
+		printf("avl-count:%d\n", avl_count);
 		if (avl_count < HOT_QUEUE_LEN)
 		{
 			flag = 1; //空间足够，可以直接写进缓存，不需要腾空间
@@ -1350,6 +1351,12 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 			buffer_node->LRU_link_pre = NULL;
 			ssd->hash->buffer->buffer_head = buffer_node;
 		}
+	}
+	struct buffer_group * buffer_group = ssd->hash->buffer->buffer_head;
+	while (buffer_group)
+	{
+		printf("avl-lpn:%d\n", buffer_group->group);
+		buffer_group->LRU_link_next = buffer_group->LRU_link_next->LRU_link_next;
 	}
 
 	struct read_hot *read_hot = NULL;
