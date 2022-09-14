@@ -1076,8 +1076,9 @@ void trace_output(struct ssd_info* ssd){
 				fflush(ssd->outputfile);
 				FILE *fp;
 				fp = fopen("./tail_latency.csv", "a+");
-				fprintf(fp, "%11d,", end_time-req->time);
+				fprintf(fp, "%lld,", end_time-req->time);
 				fflush(fp);
+				fclose(fp);
 				ssd->completed_request_count++;
 				if(ssd->completed_request_count%10000 == 0){
 					printf("completed requests: %d, max_queue_depth: %d, ", ssd->completed_request_count, ssd->max_queue_depth);
