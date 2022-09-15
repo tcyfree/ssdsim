@@ -1805,11 +1805,6 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 
 	ssd->dram->current_time=ssd->current_time;
 	req=ssd->request_tail;
-	// 如果写请求大于16KB则认为是顺序写入HDD
-	if (req->size >= 32)
-	{
-		req->direct_write_hdd = 1;
-	}
 	
 	lsn=req->lsn;//lsn是起始地址
 	lpn=req->lsn/ssd->parameter->subpage_page;
@@ -1913,7 +1908,15 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			}
 			//printf("state: %x, ", state);
 			sub_size=size(state);
-			//printf("sub_size: %d\n", sub_size);
+			// printf("req->size: %d\n", req->size);
+			//  如果写请求大于16KB则认为是顺序写入HDD
+			if (req->size >= 128)
+			{
+				ssd->dram->map->map_entry[lpn].hdd_flag == 1;
+				printf("Directly write to HDD. %d\n", req->size);
+				// continue;
+			}
+			
 			sub=creat_sub_request(ssd,lpn,sub_size,state,req,req->operation,target_page_type);
 			lpn++;
 		}
