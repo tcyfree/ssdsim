@@ -1110,6 +1110,17 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		sub->size=size;
 		sub->state=state;
 		sub->begin_time=ssd->current_time;
+		if (req->direct_write_hdd)
+		{
+			free(sub->location);
+			sub->location=NULL;
+			free(sub);
+			sub=NULL;
+			printf("Directly write to HDD.\n");
+			ssd->dram->map->map_entry[lpn].hdd_flag == 1;
+			return NULL;
+		}
+		
 
 		//调用allocate_location()函数为sub分配物理地址
 		//若非ERROR则创建写子请求成功直接返回sub

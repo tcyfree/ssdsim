@@ -1075,11 +1075,11 @@ void trace_output(struct ssd_info* ssd){
 				//fprintf(ssd->outputfile,"%10I64u %10u %6u %2u %16I64u %16I64u %10I64u\n",req->time,req->lsn, req->size, req->operation, start_time, end_time, end_time-req->time);
 				fprintf(ssd->outputfile,"%16lld %10d %6d %2d %16lld %16lld %10lld\n",req->time,req->lsn, req->size, req->operation, start_time, end_time, end_time-req->time);
 				fflush(ssd->outputfile);
-				FILE *fp;
-				fp = fopen("./tail_latency.csv", "a+");
-				fprintf(fp, "%lld,", end_time-req->time);
-				fflush(fp);
-				fclose(fp);
+				// FILE *fp;
+				// fp = fopen("./tail_latency.csv", "a+");
+				// fprintf(fp, "%lld,", end_time-req->time);
+				// fflush(fp);
+				// fclose(fp);
 				ssd->completed_request_count++;
 				if(ssd->completed_request_count%10000 == 0){
 					printf("completed requests: %d, max_queue_depth: %d, ", ssd->completed_request_count, ssd->max_queue_depth);
@@ -1805,6 +1805,12 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 
 	ssd->dram->current_time=ssd->current_time;
 	req=ssd->request_tail;
+	// 如果写请求大于16KB则认为是顺序写入HDD
+	if (req->size >= 32)
+	{
+		req->direct_write_hdd = 1;
+	}
+	
 	lsn=req->lsn;//lsn是起始地址
 	lpn=req->lsn/ssd->parameter->subpage_page;
 	last_lpn=(req->lsn+req->size-1)/ssd->parameter->subpage_page;

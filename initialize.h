@@ -483,6 +483,7 @@ struct request{
 	int64_t time;                      //请求到达的时间，单位为us,这里和通常的习惯不一样，通常的是ms为单位，这里需要有个单位变换过程
 	unsigned int lsn;                  //请求的起始地址，逻辑地址（lsn=logical sector number即逻辑扇区号）
 	unsigned int size;                 //请求的大小，即多少个扇区（the unit of request size is sector(512Bytes)）
+	unsigned int direct_write_hdd;     // 直接写入HDD
 	unsigned int operation;            //请求的种类，1为读，0为写
 
 	/*************************/
