@@ -144,7 +144,8 @@ int  main(int argc, char* argv[])
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化
-
+	//delete tail_latency 
+	system("rm tail_latency.csv");
 	//*****************************************************
 	int sTIMES, speed_up;
 	printf("Read parameters to the main function.\n");
