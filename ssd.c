@@ -1912,8 +1912,8 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			//  如果写请求大于16KB则认为是顺序写入HDD
 			if (req->size >= 128)
 			{
-				ssd->dram->map->map_entry[lpn].hdd_flag == 1;
-				printf("Directly write to HDD. %d\n", req->size);
+				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
+				// printf("Directly write to HDD. %d\n", req->size);
 				// continue;
 			}
 			
