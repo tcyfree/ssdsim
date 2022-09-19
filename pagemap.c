@@ -1170,6 +1170,12 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	*/
 	if(ssd->dram->map->map_entry[lpn].state==0)         //没有映射关系，表示该子请求不是更新请求，可以直接写入         /*this is the first logical page*/
 	{
+		// 可能之前被写入HDD没有被回写
+		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+		{
+			ssd->dram->map->map_entry[lpn].hdd_flag=0;
+		}
+		
 		if(ssd->dram->map->map_entry[lpn].pn!=0)
 		{
 			printf("Error in get_ppn()\n");
