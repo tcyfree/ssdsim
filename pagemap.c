@@ -1504,6 +1504,14 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 			flag = 1;
 			break;
 		}
+		// hdd_flag = 2,初始化映射表
+		if (ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag != 0)
+		{
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag = 0;
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].pn = 0;
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].state = 0;
+		}
+		
 	}
 	if (flag == 1)
 	{
