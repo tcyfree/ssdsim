@@ -10,22 +10,7 @@ echo "$title" >> out.txt
 ./ssd 1 1 $1   
 cat ex.out | tail -n 1 >> out.txt
 
-./ssd 1 1 $1 2 2     
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 4 2     
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 8 2
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 16 2     
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 32 2     
-cat ex.out | tail -n 1 >> out.txt
-
-./ssd 1 1 $1 64 2     
+./ssd 1 1 $1 1     
 cat ex.out | tail -n 1 >> out.txt
 
 ./ssd 1 1 $1 2 1     

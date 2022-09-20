@@ -154,8 +154,8 @@ int  main(int argc, char* argv[])
 	sscanf(argv[3], "%s", &(ssd->tracefilename));
 	if (argc == 5)
 	{
-		sscanf(argv[4], "%d", &(ssd->seq_num));
-		printf("ssd->seq_num: %d.\n", ssd->seq_num);
+		sscanf(argv[4], "%d", &(ssd->is_related_work));
+		printf("ssd->is_related_work: %d.\n", ssd->is_related_work);
 	}
 	if (argc == 6)
 	{
@@ -1908,6 +1908,12 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			//printf("state: %x, ", state);
 			sub_size=size(state);
 			//printf("sub_size: %d\n", sub_size);
+			//  如果写请求大于32KB则认为是顺序写入HDD
+			if (req->size >= 64 && ssd->is_related_work == 1)
+			{
+				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
+				// printf("Directly write to HDD. %d\n", req->size);
+			}
 			sub=creat_sub_request(ssd,lpn,sub_size,state,req,req->operation,target_page_type);
 			lpn++;
 		}

@@ -2719,7 +2719,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			times = 0;
 		}
 	}
-	//related work
+	//no choise for block and hot list
 	else if (ssd->is_sequential == 2)
 	{
 		int arr[1024], l = 0;
