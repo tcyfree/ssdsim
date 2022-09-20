@@ -1878,6 +1878,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		else{
 			target_page_type = TARGET_MSB;
 			}
+		int seq_num = last_lpn - lpn + 1; // number of sequential write to HDD
 		while(lpn<=last_lpn)
 		{
 			if(ssd->parameter->subpage_page == 32){
@@ -1913,7 +1914,6 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
 				// ssd->dram->map->map_entry[lpn].state = 0; 
 				// ssd->dram->map->map_entry[lpn].pn = 0;
-				req->response_time = req->time + 1000;
 				// sub=creat_sub_request_pro(ssd,lpn,sub_size,state,req,req->operation,target_page_type, 2);
 				// printf("Directly write to HDD. %d\n", req->size);
 			} else
@@ -1922,6 +1922,12 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				ssd->trace_write_count++;
 			}
 			lpn++;
+		}
+		//sequential write to HDD 
+		if (req->size >= 64 && ssd->is_related_work == 1)
+		{
+			char *avg = exec_disksim_syssim(seq_num, 0, 1);
+			req->response_time = req->time + (int)avg * seq_num;
 		}
 	}
 
