@@ -2866,172 +2866,25 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	}
 	else
 	{	
-		int arr_r[512], l_r = 0;
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
 			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页*/
 			{
-				arr_r[l_r] = lpn;
-				l_r++;
+				location = (struct local *)malloc(sizeof(struct local));
+				alloc_assert(location, "location");
+				memset(location, 0, sizeof(struct local));
+				location->channel = channel;
+				location->chip = chip;
+				location->die = die;
+				location->plane = plane;
+				location->block = block;
+				location->page = i;
+				adjust_page_hdd(ssd, location, &transfer_size);
+				char *avg = exec_disksim_syssim(1, 0, 0);
+				write_hdd_time += (int)avg * 1;
+				
 			}
-		}
-		//将lpn排序
-		sort(arr_r, l_r);
-		// int j_i;
-		// for (j_i = 0; j_i < l_r; j_i++)
-		// {
-		// 	printf("%d %d\n", arr_r[j_i], l_r);
-		// }
-		//只有一个有效页
-		if (l_r == 1)
-		{
-			int page_i;
-			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[0]);
-			
-			location = (struct local *)malloc(sizeof(struct local));
-			alloc_assert(location, "location");
-			memset(location, 0, sizeof(struct local));
-			location->channel = channel;
-			location->chip = chip;
-			location->die = die;
-			location->plane = plane;
-			location->block = block;
-			location->page = page_i;
-			adjust_page_hdd(ssd, location, &transfer_size);
-			char *avg = exec_disksim_syssim(1, 0, 0);
-			write_hdd_time += (int)avg * 1;
-		}
-		//块中有多个有效页
-		int random_seq_num = 0;
-		int random_num = 0; //非连续个数，用于一次性写入hdd
-		for (i = 0; i < l_r && l_r > 1; i++)
-		{
-			if (i == 0)
-			{
-				if (arr_r[i + 1] - arr_r[i] == 1)
-				{
-					if (random_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_num, 0, 0);
-						write_hdd_time += (int)avg * random_num;
-						random_num = 0;
-					}
-					int page_i;
-					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
-					location = (struct local *)malloc(sizeof(struct local));
-					alloc_assert(location, "location");
-					memset(location, 0, sizeof(struct local));
-					location->channel = channel;
-					location->chip = chip;
-					location->die = die;
-					location->plane = plane;
-					location->block = block;
-					location->page = page_i;
-					adjust_page_hdd(ssd, location, &transfer_size);
-					random_seq_num++;
-				}
-				else
-				{
-					int page_i;
-					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
-					location = (struct local *)malloc(sizeof(struct local));
-					alloc_assert(location, "location");
-					memset(location, 0, sizeof(struct local));
-					location->channel = channel;
-					location->chip = chip;
-					location->die = die;
-					location->plane = plane;
-					location->block = block;
-					location->page = page_i;
-					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
-					random_num++;
-				}
-			}
-			else
-			{
-				if (arr_r[i] - arr_r[i - 1] == 1)
-				{
-					if (random_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_num, 0, 0);
-						write_hdd_time += (int)avg * random_num;
-						random_num = 0;
-					}
-					int page_i;
-					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
-					location = (struct local *)malloc(sizeof(struct local));
-					alloc_assert(location, "location");
-					memset(location, 0, sizeof(struct local));
-					location->channel = channel;
-					location->chip = chip;
-					location->die = die;
-					location->plane = plane;
-					location->block = block;
-					location->page = page_i;
-					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
-					random_seq_num++;
-				}
-				else if (i < l_r - 1 && arr_r[i + 1] - arr_r[i] == 1)
-				{
-					if (random_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_num, 0, 0);
-						write_hdd_time += (int)avg * random_num;
-						random_num = 0;
-					}
-					//1 3,4,5 7,8
-					if (random_seq_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_seq_num, 0, 1);
-						write_hdd_time += (int)avg * random_seq_num;
-						random_seq_num = 0;
-					}
-					int page_i;
-					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
-					location = (struct local *)malloc(sizeof(struct local));
-					alloc_assert(location, "location");
-					memset(location, 0, sizeof(struct local));
-					location->channel = channel;
-					location->chip = chip;
-					location->die = die;
-					location->plane = plane;
-					location->block = block;
-					location->page = page_i;
-					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
-					random_seq_num++;
-				}
-				else
-				{
-					if (random_seq_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_seq_num, 0, 1);
-						write_hdd_time += (int)avg * random_seq_num;
-						random_seq_num = 0;
-					}
-					int page_i;
-					page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr_r[i]);
-					location = (struct local *)malloc(sizeof(struct local));
-					alloc_assert(location, "location");
-					memset(location, 0, sizeof(struct local));
-					location->channel = channel;
-					location->chip = chip;
-					location->die = die;
-					location->plane = plane;
-					location->block = block;
-					location->page = page_i;
-					adjust_page_hdd(ssd, location, &transfer_size); /*将该page标识为HDD*/
-					random_num++;
-					// char *avg = exec_disksim_syssim(1, 0, 0);
-					// write_hdd_time += (int)avg * 1;
-				}
-			}
-		}
-		if (random_num != 0)
-		{
-			char *avg = exec_disksim_syssim(random_num, 0, 0);
-			write_hdd_time += (int)avg * random_num;
-			random_num = 0;
 		}
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
