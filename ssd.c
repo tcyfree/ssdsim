@@ -1860,6 +1860,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				}
 				sub_size = size(state);
 				sub = creat_sub_request(ssd, lpn, sub_size, state, req, WRITE, target_page_type);
+				ssd->writeback_count++;
 				ssd->dram->map->map_entry[lpn].hdd_flag == 0;
 			}
 			lpn++;
@@ -1915,6 +1916,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				// printf("Directly write to HDD. %d\n", req->size);
 			}
 			sub=creat_sub_request(ssd,lpn,sub_size,state,req,req->operation,target_page_type);
+			ssd->trace_write_count++;
 			lpn++;
 		}
 	}
