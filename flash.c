@@ -1230,6 +1230,95 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 
 	return sub;
 }
+
+/**
+ * @brief writeback flag for sub_request
+ * 
+ * @param ssd 
+ * @param lpn 
+ * @param size 
+ * @param state 
+ * @param req 
+ * @param operation 
+ * @param target_page_type 
+ * @return struct sub_request* 
+ */
+struct sub_request * creat_sub_request_writeback(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type)
+{
+	struct sub_request* sub=NULL,* sub_r=NULL;
+	struct channel_info * p_ch=NULL;
+	struct local * loc=NULL;
+	unsigned int flag=0;
+
+	sub = (struct sub_request*)malloc(sizeof(struct sub_request));     /*申请一个子请求sub的空间*/
+	alloc_assert(sub,"sub_request");
+	memset(sub,0, sizeof(struct sub_request));
+
+	if(sub==NULL)//分配失败的情况
+	{
+		return NULL;
+	}
+	//若分配成功，初始化子请求sub的成员变量值
+	sub->location=NULL;
+	sub->next_node=NULL;
+	sub->next_subs=NULL;
+	sub->update=NULL;
+	sub->target_page_type = target_page_type;
+
+	//随后，程序会进一步判断req也就是IO请求项是否为空，若非空则将新定义的sub挂接到req的sub队列队头上去
+	//否则若为空则说明创建的子请求是要挂到channel中的，程序会直接进行操作类型operation的判断。
+	//把当前请求插入到req的自请求队列里
+	if(req!=NULL)
+	{
+		sub->next_subs = req->subs;
+		req->subs = sub;
+	}
+
+	if(operation == WRITE)
+	{
+		//设置相关的成员信息
+		sub->ppn=0;
+		sub->operation = WRITE;
+		sub->location=(struct local *)malloc(sizeof(struct local));
+		alloc_assert(sub->location,"sub->location");
+		memset(sub->location,0, sizeof(struct local));
+
+		sub->current_state=SR_WAIT;
+		sub->current_time=ssd->current_time;
+		sub->lpn=lpn;
+		sub->size=size;
+		sub->state=state;
+		sub->begin_time=ssd->current_time;
+		sub->is_writeback = 1; //writeback flag
+
+		//调用allocate_location()函数为sub分配物理地址
+		//若非ERROR则创建写子请求成功直接返回sub
+		//若allocate_location()返回ERROR则说明分配失败此时需要释放malloc动态申请到的location空间，且释放sub和返回NULL表示创建写子请求失败。
+		if (allocate_location(ssd ,sub)==ERROR)
+		{
+			free(sub->location);
+			sub->location=NULL;
+			free(sub);
+			sub=NULL;
+			return NULL;
+		}
+		record_write_hot(ssd, lpn);
+		// record_seq_write(ssd, lpn, 2);
+	}
+
+	//operation既不为READ也不为WRITE，那么说明传入的operation有误，此时需要释放前面动态申请的location且释放sub，打印出错信息并返回NULL。
+	else
+	{
+		free(sub->location);
+		sub->location=NULL;
+		free(sub);
+		sub=NULL;
+		printf("\nERROR ! Unexpected command.\n");
+		return NULL;
+	}
+
+	return sub;
+}
 // /**
 //  * @brief 查找热度数最低的第一个，删除然后再在最后加上现在的热度数据
 //  * 
@@ -4483,6 +4572,12 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				sub->next_state_predict_time=ssd->current_time+7*ssd->parameter->time_characteristics.tWC+(sub->size*ssd->parameter->subpage_capacity)*ssd->parameter->time_characteristics.tWC;
 				//sub->complete_time=sub->next_state_predict_time;
 				time=sub->next_state_predict_time;
+				if (sub->is_writeback == 1)
+				{
+					// printf("is-writeback is 1!\n");
+					ssd->writeback_count++;
+					ssd->dram->map->map_entry[sub->lpn].hdd_flag == 0;
+				}
 
 				ssd->channel_head[location->channel].current_state=CHANNEL_TRANSFER;
 				ssd->channel_head[location->channel].current_time=ssd->current_time;
