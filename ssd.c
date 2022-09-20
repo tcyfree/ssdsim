@@ -1913,6 +1913,8 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			if (req->size >= 64 && ssd->is_related_work == 1)
 			{
 				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
+				ssd->dram->map->map_entry[lpn].state = 0;
+				ssd->dram->map->map_entry[lpn].pn = 0;
 				req->response_time = req->time + 1000;
 				// printf("Directly write to HDD. %d\n", req->size);
 			} else
