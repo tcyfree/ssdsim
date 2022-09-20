@@ -1859,7 +1859,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 					}
 				}
 				sub_size = size(state);
-				sub = creat_sub_request_writeback(ssd, lpn, sub_size, state, req, WRITE, target_page_type);
+				sub = creat_sub_request_pro(ssd, lpn, sub_size, state, req, WRITE, target_page_type, 1);
 			}
 			lpn++;
 		}
@@ -1914,13 +1914,13 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				// ssd->dram->map->map_entry[lpn].state = 0; //为什么不能置为0
 				// ssd->dram->map->map_entry[lpn].pn = 0;
 				req->response_time = req->time + 1000;
+				sub=creat_sub_request_pro(ssd,lpn,sub_size,state,req,req->operation,target_page_type, 2);
 				// printf("Directly write to HDD. %d\n", req->size);
 			} else
 			{
+				sub=creat_sub_request(ssd,lpn,sub_size,state,req,req->operation,target_page_type);
 				ssd->trace_write_count++;
 			}
-							
-			sub=creat_sub_request(ssd,lpn,sub_size,state,req,req->operation,target_page_type);
 			lpn++;
 		}
 	}

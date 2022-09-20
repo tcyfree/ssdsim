@@ -1232,7 +1232,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 }
 
 /**
- * @brief writeback flag for sub_request
+ * @brief creat-sub-req-pro
  * 
  * @param ssd 
  * @param lpn 
@@ -1243,12 +1243,11 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
  * @param target_page_type 
  * @return struct sub_request* 
  */
-struct sub_request * creat_sub_request_writeback(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type)
+struct sub_request * creat_sub_request_pro(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type, unsigned flag)
 {
 	struct sub_request* sub=NULL,* sub_r=NULL;
 	struct channel_info * p_ch=NULL;
 	struct local * loc=NULL;
-	unsigned int flag=0;
 
 	sub = (struct sub_request*)malloc(sizeof(struct sub_request));     /*申请一个子请求sub的空间*/
 	alloc_assert(sub,"sub_request");
@@ -1289,8 +1288,17 @@ struct sub_request * creat_sub_request_writeback(struct ssd_info * ssd,unsigned 
 		sub->size=size;
 		sub->state=state;
 		sub->begin_time=ssd->current_time;
-		sub->is_writeback = 1; //writeback flag
-
+		if (flag == 1)
+		{
+			sub->is_writeback = 1; //writeback flag
+		} else if (flag == 2)
+		{
+			sub->no_ope = 1;
+		} else
+		{
+			printf("flag is error: %d\n", flag);
+		}
+		
 		//调用allocate_location()函数为sub分配物理地址
 		//若非ERROR则创建写子请求成功直接返回sub
 		//若allocate_location()返回ERROR则说明分配失败此时需要释放malloc动态申请到的location空间，且释放sub和返回NULL表示创建写子请求失败。
@@ -4577,6 +4585,11 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 					// printf("is-writeback is 1!\n");
 					ssd->writeback_count++;
 					ssd->dram->map->map_entry[sub->lpn].hdd_flag == 0;
+				}
+				if (sub->no_ope == 1)
+				{
+					printf("no_ope is 1!\n");
+					abort();
 				}
 
 				ssd->channel_head[location->channel].current_state=CHANNEL_TRANSFER;

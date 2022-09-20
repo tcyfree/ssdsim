@@ -521,6 +521,7 @@ struct request{
 
 struct sub_request{
 	unsigned int is_writeback;          // 是否HDD回写SSD
+	unsigned int no_ope;          // no operate
 	unsigned int lpn;                  //这里表示该子请求的逻辑页号（该子请求的目标地址）
 	unsigned int ppn;                  //分配那个物理子页给这个子请求。在multi_chip_page_mapping中，产生子页请求时可能就知道psn的值，其他时候psn的值由page_map_read,page_map_write等FTL最底层函数产生。
 	unsigned int operation;            //表示该子请求的类型，除了读1 写0，还有擦除，two plane等操作
