@@ -144,7 +144,8 @@ int  main(int argc, char* argv[])
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化
-
+	//delete tail_latency 
+	system("rm tail_latency.csv");
 	//*****************************************************
 	int sTIMES, speed_up;
 	printf("Read parameters to the main function.\n");
@@ -1074,6 +1075,11 @@ void trace_output(struct ssd_info* ssd){
 				//fprintf(ssd->outputfile,"%10I64u %10u %6u %2u %16I64u %16I64u %10I64u\n",req->time,req->lsn, req->size, req->operation, start_time, end_time, end_time-req->time);
 				fprintf(ssd->outputfile,"%16lld %10d %6d %2d %16lld %16lld %10lld\n",req->time,req->lsn, req->size, req->operation, start_time, end_time, end_time-req->time);
 				fflush(ssd->outputfile);
+				FILE *fp;
+				fp = fopen("./tail_latency.csv", "a+");
+				fprintf(fp, "%lld,", end_time-req->time);
+				fflush(fp);
+				fclose(fp);
 				ssd->completed_request_count++;
 				if(ssd->completed_request_count%10000 == 0){
 					printf("completed requests: %d, max_queue_depth: %d, ", ssd->completed_request_count, ssd->max_queue_depth);

@@ -1170,6 +1170,12 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	*/
 	if(ssd->dram->map->map_entry[lpn].state==0)         //没有映射关系，表示该子请求不是更新请求，可以直接写入         /*this is the first logical page*/
 	{
+		// 可能之前被写入HDD没有被回写
+		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
+		{
+			ssd->dram->map->map_entry[lpn].hdd_flag=0;
+		}
+		
 		if(ssd->dram->map->map_entry[lpn].pn!=0)
 		{
 			printf("Error in get_ppn()\n");
@@ -1498,6 +1504,14 @@ Status erase_operation(struct ssd_info * ssd,unsigned int channel ,unsigned int 
 			flag = 1;
 			break;
 		}
+		// hdd_flag = 2,初始化映射表
+		if (ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag != 0)
+		{
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].hdd_flag = 0;
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].pn = 0;
+			ssd->dram->map->map_entry[ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn].state = 0;
+		}
+		
 	}
 	if (flag == 1)
 	{
