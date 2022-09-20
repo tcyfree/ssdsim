@@ -1911,10 +1911,10 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			if (req->size >= 64 && ssd->is_related_work == 1)
 			{
 				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
-				// ssd->dram->map->map_entry[lpn].state = 0; //为什么不能置为0
+				// ssd->dram->map->map_entry[lpn].state = 0; 
 				// ssd->dram->map->map_entry[lpn].pn = 0;
 				req->response_time = req->time + 1000;
-				sub=creat_sub_request_pro(ssd,lpn,sub_size,state,req,req->operation,target_page_type, 2);
+				// sub=creat_sub_request_pro(ssd,lpn,sub_size,state,req,req->operation,target_page_type, 2);
 				// printf("Directly write to HDD. %d\n", req->size);
 			} else
 			{

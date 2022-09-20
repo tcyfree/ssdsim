@@ -1173,6 +1173,12 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		// 可能之前被写入HDD没有被回写
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
+			if (sub->no_ope == 1)
+			{
+				printf("get-ppn sub->no_ope == 1\n");
+				abort();
+			}
+			
 			ssd->dram->map->map_entry[lpn].hdd_flag=0;
 		}
 		
