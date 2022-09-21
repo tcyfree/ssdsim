@@ -4,7 +4,7 @@ rm -rf update-write.csv
 
 echo $1 >> out.txt
 
-title="seq_num,   gc_count,   move_page_count,   read_avg,   write_avg,   update-hdd,   non-gc,   read-hdd,   trace_ssd,   wb_ssd"
+title="seq_num,  gc_count,  move_page_count,  read_avg,  write_avg,  update-hdd,  non-gc,  read-hdd,   trace_ssd,   wb_ssd"
 echo "$title" >> out.txt
 
 ./ssd 1 1 $1   
