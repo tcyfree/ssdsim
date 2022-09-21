@@ -1879,6 +1879,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			target_page_type = TARGET_MSB;
 			}
 		int seq_num = last_lpn - lpn + 1; // number of sequential write to HDD
+		int threshold_size = 512; // threshold size to HDD
 		while(lpn<=last_lpn)
 		{
 			if(ssd->parameter->subpage_page == 32){
@@ -1909,7 +1910,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			sub_size=size(state);
 			//printf("sub_size: %d\n", sub_size);
 			//  如果写请求大于32KB则认为是顺序写入HDD
-			if (req->size >= 64 && ssd->is_related_work == 1)
+			if (req->size >= threshold_size && ssd->is_related_work == 1)
 			{
 				ssd->dram->map->map_entry[lpn].hdd_flag = 1;
 				// ssd->dram->map->map_entry[lpn].state = 0; 
@@ -1924,10 +1925,18 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			lpn++;
 		}
 		//sequential write to HDD 
-		if (req->size >= 64 && ssd->is_related_work == 1)
+		if (req->size >= threshold_size && ssd->is_related_work == 1)
 		{
+			int write_hdd_time = 0;
 			char *avg = exec_disksim_syssim(seq_num, 0, 1);
-			req->response_time = req->time + (int)avg * seq_num;
+			write_hdd_time = (int)avg * seq_num;
+			if (ssd->HDDTime < ssd->current_time)
+			{
+				ssd->HDDTime = ssd->current_time;
+			}
+			write_hdd_time += (ssd->HDDTime - ssd->current_time);
+			ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
+			req->response_time = req->time + write_hdd_time;
 		}
 	}
 
