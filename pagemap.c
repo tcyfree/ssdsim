@@ -2536,13 +2536,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				//有效且非hdd
 				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && j - temp == 1)
 				{
-					if (random_num != 0)
-					{
-						char *avg = exec_disksim_syssim(random_num, 0, 0);
-						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
-						write_hdd_time += (int)avg * random_num;
-						random_num = 0;
-					}
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 					if (location_check->chip != chip && location_check->channel != channel)
@@ -2702,13 +2695,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			if (is_seq)
 			{
 				times++; //被查找的page
-			}
-			else
-			{
-				random_num++;
-			}
-			if (times != 0)
-			{
 				if (times == 1)
 				{
 					printf("times:%d\n", times);
@@ -2721,6 +2707,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("write_hdd_time:%d\n", write_hdd_time);
 					abort();
 				}
+			}
+			else
+			{
+				char *avg = exec_disksim_syssim(1, 0, 0);
+				write_hdd_time += (int)avg * 1;
 			}
 			times = 0;
 		}
