@@ -1134,8 +1134,14 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			{
 				ssd->HDDTime = ssd->current_time;
 			}
-			read_hdd_time += (ssd->HDDTime - ssd->current_time);
-			ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
+			// read_hdd_time += (ssd->HDDTime - ssd->current_time);
+			// ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
+			FILE *fp;
+			char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			fp = fopen(ret, "a+");
+			fprintf(fp, "%lld, %d, %ld, %d, %d\n", ssd->current_time, 0, lpn, 1, 1);
+			fflush(fp);
+			fclose(fp);
 
 			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
 			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求

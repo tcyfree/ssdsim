@@ -234,6 +234,8 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	fp = fopen(ret, "a+");
 	fprintf(fp, ret);
 	fprintf(fp, "\n");
+	fprintf(fp, ssd->seq_num);
+	fprintf(fp, "\n");
 	fflush(fp);
 	fclose(fp);
 
@@ -1895,7 +1897,31 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			target_page_type = TARGET_MSB;
 			}
 		int seq_num = last_lpn - lpn + 1; // number of sequential write to HDD
-		int threshold_size = 512; // threshold size to HDD
+		int threshold_size = 256; // threshold size to HDD
+		//sequential write to HDD 
+		if (req->size >= threshold_size && ssd->is_related_work == 1)
+		{
+			int write_hdd_time = 0;
+			char *avg = exec_disksim_syssim(seq_num, 0, 1);
+			write_hdd_time = (int)avg * seq_num;
+			if (ssd->HDDTime < ssd->current_time)
+			{
+				ssd->HDDTime = ssd->current_time;
+			}
+			write_hdd_time += (ssd->HDDTime - ssd->current_time);
+			ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
+			// req->response_time = req->time + write_hdd_time;
+			req->response_time = req->time + 1;
+			FILE *fp;
+			char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			fp = fopen(ret, "a+");
+			// 改成一个page-8KB大小
+			printf("req-size: %d\n", req->size);
+			printf("req-size-2: %d\n", req->size / 2 / 8);
+			fprintf(fp, "%lld, %d, %ld, %d, %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			fflush(fp);
+			fclose(fp);
+		}
 		while(lpn<=last_lpn)
 		{
 			if(ssd->parameter->subpage_page == 32){
@@ -1939,20 +1965,6 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				ssd->trace_write_count++;
 			}
 			lpn++;
-		}
-		//sequential write to HDD 
-		if (req->size >= threshold_size && ssd->is_related_work == 1)
-		{
-			int write_hdd_time = 0;
-			char *avg = exec_disksim_syssim(seq_num, 0, 1);
-			write_hdd_time = (int)avg * seq_num;
-			if (ssd->HDDTime < ssd->current_time)
-			{
-				ssd->HDDTime = ssd->current_time;
-			}
-			write_hdd_time += (ssd->HDDTime - ssd->current_time);
-			ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
-			req->response_time = req->time + write_hdd_time;
 		}
 	}
 
