@@ -46,6 +46,7 @@ int get_avg_time(int index, int seq)
  */
 char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
 {
+	return 0;
 	// char average[1024], command[1024];
 	// FILE * temp;
 	// // sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
@@ -220,7 +221,22 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	ssd->speed_up = speed_up;
 	//*********************************************
 	//ssd=simulate(ssd);
-        srand((unsigned int)time(NULL));
+	srand((unsigned int)time(NULL));
+
+	FILE *fp;
+	//获取trace名称
+	char *ret = strrchr(ssd->tracefilename, '/') + 1;
+	//init file
+	char command[16];
+    sprintf(command,"%s%s", "rm ", ret);
+	system(command);
+	//打开文件
+	fp = fopen(ret, "a+");
+	fprintf(fp, ret);
+	fprintf(fp, "\n");
+	fflush(fp);
+	fclose(fp);
+
 	ssd=simulate_multiple(ssd, sTIMES); //核心处理函数，对ssd进行一个模拟能耗过程
 	statistic_output(ssd); //输出模拟后的结果
 /*	free_all_node(ssd);*/

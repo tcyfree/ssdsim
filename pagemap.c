@@ -2692,6 +2692,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location = NULL;
 			free(location_check);
 			location_check = NULL;
+			FILE *fp;
+			char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			fp = fopen(ret, "a+");
 			if (is_seq)
 			{
 				times++; //被查找的page
@@ -2707,13 +2710,18 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("write_hdd_time:%d\n", write_hdd_time);
 					abort();
 				}
+				// sscanf(line, "%lf %d %ld %d %d", &time, &devno, &logical_block_number,&size, &isread)
+				fprintf(fp, "%lld, %d, %d, %d, %d\n",ssd->current_time, 0, arr[i], times, 0);
+				times = 0;
 			}
 			else
 			{
 				char *avg = exec_disksim_syssim(1, 0, 0);
 				write_hdd_time += (int)avg * 1;
+				fprintf(fp, "%lld, %d, %d, %d, %d\n",ssd->current_time, 0, arr[i], 1, 0);
 			}
-			times = 0;
+			fflush(fp);
+			fclose(fp);
 		}
 	}
 	//no choise for block and hot list
@@ -2862,7 +2870,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 	}
 	else
-	{	
+	{
+		FILE *fp;
+		char *ret = strrchr(ssd->tracefilename, '/') + 1;
+		fp = fopen(ret, "a+");
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
@@ -2880,9 +2891,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				adjust_page_hdd(ssd, location, &transfer_size);
 				char *avg = exec_disksim_syssim(1, 0, 0);
 				write_hdd_time += (int)avg * 1;
-				
+				fprintf(fp, "%lld, %d, %d, %d, %d\n",ssd->current_time, 0, lpn, 1, 0);
 			}
 		}
+		fflush(fp);
+		fclose(fp);
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
@@ -2945,11 +2958,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(ssd->parameter->time_characteristics.tR)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
 		
-		if(ssd->HDDTime < ssd->current_time){
-			ssd->HDDTime = ssd->current_time;
-		}
-		write_hdd_time += (ssd->HDDTime - ssd->current_time);
-		ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
+		// if(ssd->HDDTime < ssd->current_time){
+		// 	ssd->HDDTime = ssd->current_time;
+		// }
+		// write_hdd_time += (ssd->HDDTime - ssd->current_time);
+		// ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
 
 		ssd->channel_head[channel].next_state_predict_time=ssd->current_time+page_move_count*(7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tPROG)+transfer_size*SECTOR*(ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tRC) + write_hdd_time;
 
