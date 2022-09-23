@@ -1918,7 +1918,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			// 改成一个page-8KB大小
 			printf("req-size: %d\n", req->size);
 			printf("req-size-2: %d\n", req->size / 2 / 8);
-			fprintf(fp, "%lld, %d, %ld, %d, %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
 			fflush(fp);
 			fclose(fp);
 		}
