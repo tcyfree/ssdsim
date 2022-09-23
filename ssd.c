@@ -234,8 +234,7 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	fp = fopen(ret, "a+");
 	fprintf(fp, ret);
 	fprintf(fp, "\n");
-	fprintf(fp, ssd->seq_num);
-	fprintf(fp, "\n");
+	fprintf(fp, "%d\n", ssd->seq_num);
 	fflush(fp);
 	fclose(fp);
 
