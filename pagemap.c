@@ -2548,38 +2548,18 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					w_hot_q = ssd->write_hot_head;
 					//查找热读
 					struct buffer_group *buffer_node = NULL, key;
-					key.group = j;																		//记录当前的lpn
+					key.group = j; //记录当前的lpn
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 					if (buffer_node != NULL)
 					{
-						// printf("avl-hot_r:%d\n", j);
 						hot_r = 1;
 					}
-					// while (r_hot_q)
-					// {
-					// 	if (r_hot_q->lpn == j)
-					// 	{
-					// 		hot_r = 1;
-					// 		break;
-					// 	}
-					// 	r_hot_q = r_hot_q->next;
-					// }
 					//查找热写
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 					if (buffer_node != NULL)
 					{
-						// printf("avl-hot_w:%d\n", j);
 						hot_w = 1;
 					}
-					// while (w_hot_q)
-					// {
-					// 	if (w_hot_q->lpn == j)
-					// 	{
-					// 		hot_w = 1;
-					// 		break;
-					// 	}
-					// 	w_hot_q = w_hot_q->next;
-					// }
 					//查找的page是否是当前块
 					//机制1：针对第一类Page，执行GC时只将存在于热读列表中同时不在热写列表中的数据保留在SSD中，而将其他数据写入到HDD中。
 					if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
@@ -2635,22 +2615,12 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			w_hot_q = ssd->write_hot_head;
 			//查找热读
 			struct buffer_group *buffer_node = NULL, key;
-			key.group = arr[i];																			//记录当前的lpn
+			key.group = arr[i];	//记录当前的lpn
 			buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 			if (buffer_node != NULL)
 			{
-				// printf("avl-hot_r:%d\n", j);
 				hot_r = 1;
 			}
-			// while (r_hot_q)
-			// {
-			// 	if (r_hot_q->lpn == arr[i])
-			// 	{
-			// 		hot_r = 1;
-			// 		break;
-			// 	}
-			// 	r_hot_q = r_hot_q->next;
-			// }
 			//查找热写
 			buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 			if (buffer_node != NULL)
@@ -2658,15 +2628,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				// printf("avl-hot_w:%d\n", lpn);
 				hot_w = 1;
 			}
-			// while (w_hot_q)
-			// {
-			// 	if (w_hot_q->lpn == arr[i])
-			// 	{
-			// 		hot_w = 1;
-			// 		break;
-			// 	}
-			// 	w_hot_q = w_hot_q->next;
-			// }
 			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
 			location = (struct local *)malloc(sizeof(struct local));
 			alloc_assert(location, "location");
@@ -2682,7 +2643,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				printf("rule1-0 %d\n", j);
 				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 				page_move_count++;
-				
 			}
 			else
 			{
