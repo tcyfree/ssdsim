@@ -227,7 +227,7 @@ SSDsim将ssd的通道channel，通道上的每个芯片chip，每个芯片上的
 	//获取trace名称
 	char *ret = strrchr(ssd->tracefilename, '/') + 1;
 	//init file
-	char command[16];
+	char command[32];
     sprintf(command,"%s%s", "rm ", ret);
 	system(command);
 	//打开文件
