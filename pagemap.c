@@ -2851,7 +2851,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				adjust_page_hdd(ssd, location, &transfer_size);
 				char *avg = exec_disksim_syssim(1, 0, 0);
 				write_hdd_time += (int)avg * 1;
-				fprintf(fp, "%lld, %d, %ld, %d, %d\n",ssd->current_time, 0, lpn, 1, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
 			}
 		}
 		fflush(fp);
