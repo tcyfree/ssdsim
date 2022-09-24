@@ -37,32 +37,33 @@ int get_avg_time(int index, int seq)
 }
 
 /**
- * @brief 执行次数、读写、随机/顺序
+ * @brief call disksim
  * 
- * @param times 
- * @param is_read 
- * @param is_sequential 
+ * @param time 
+ * @param lpn 
+ * @param size 
+ * @param isread 
  * @return char* 
  */
-char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
+char* exec_disksim_syssim(double time, long lpn, int size, int isread) 
 {
-	return 0;
-	// char average[1024], command[1024];
-	// FILE * temp;
-	// // sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
-	// //容器里面执行
-	// sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d hplajw.parv > temp.txt", times, is_read, is_sequential);
-	// // printf("%s\n", command);
-	// int i = system(command);
-	// // printf("i: %d\n", i);
-	// temp = fopen("../disksim/valid/temp.txt","r");
-	// if(temp == NULL )      /*打开trace文件从中读取请求*/
-	// {
-	// 	printf("the trace temp can't open\n");
-	// }
-	// fgets(average, 200, temp);
-	// // printf("average: %d\n", atoi(average));
-	// return atoi(average);
+	char average[1024], command[1024];
+	FILE * temp;
+	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
+	//容器里面执行
+	// printf("%lf %d %ld %d %d\n", time, devno, logical_block_number,size, isread);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv  %lf %ld %d %d > temp.txt", time, lpn, size, isread);
+	// printf("%s\n", command);
+	int i = system(command);
+	// printf("i: %d\n", i);
+	temp = fopen("../disksim/valid/temp.txt","r");
+	if(temp == NULL )      /*打开trace文件从中读取请求*/
+	{
+		printf("the trace temp can't open\n");
+	}
+	fgets(average, 200, temp);
+	// printf("average: %d\n", atoi(average));
+	return atoi(average);
 	// if (is_read == 0)
 	// {
 	// 	if (is_sequential == 1)
@@ -76,21 +77,21 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 	// 	return 2100000;
 	// }
 	// self define cost function for HDD
-	if (is_read == 0)
-	{
-		if (is_sequential == 1)
-		{
-			return (5000000 + 1000000 *times) / times;
-		}
-		else
-		{
-			return 6000000;
-		}
-	}
-	else
-	{
-		return 5000000;
-	}
+	// if (is_read == 0)
+	// {
+	// 	if (is_sequential == 1)
+	// 	{
+	// 		return (5000000 + 1000000 *times) / times;
+	// 	}
+	// 	else
+	// 	{
+	// 		return 6000000;
+	// 	}
+	// }
+	// else
+	// {
+	// 	return 5000000;
+	// }
 }
 /**
  * @brief Get the aged ratio object
@@ -138,9 +139,9 @@ int  main(int argc, char* argv[])
 	printf("enter main\n");
 	#endif
 	//顺序读10次
-	average = exec_disksim_syssim(10, 0, 1);
+	average = exec_disksim_syssim(1455591804186285022, 1007898, 1, 0);
 	printf("average-s: %d\n",average);
-	average = exec_disksim_syssim(10, 0, 0);
+	average = exec_disksim_syssim(1455591804186285022, 1007898, 1, 1);
 	printf("average-r: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
@@ -171,8 +172,8 @@ int  main(int argc, char* argv[])
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0], ssd->parameter->chip_num); //（各channel上chip数量，整个SSD上chip数量）
 	//由于大部分是写少读多，所以老化一部分，更快的GC。而且要在预填数据之前，否则会有错误
-	// make_aged(ssd);
-	// get_aged_ratio(ssd);
+	make_aged(ssd);
+	get_aged_ratio(ssd);
 	//warm_up
 	pre_process_write_read(ssd);
 	get_aged_ratio(ssd);
@@ -1344,7 +1345,8 @@ void statistic_output(struct ssd_info *ssd)
 							erase=erase+ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].erase_count;
 							plane_erase+=ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].erase_count;
 						}
-						for (int l = 0; l < ssd->parameter->page_block; l++)
+						int l;
+						for (l = 0; l < ssd->parameter->page_block; l++)
 						{
 							if (ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn != -1 && ssd->dram->map->map_entry[ssd->channel_head[i].chip_head[j].die_head[k].plane_head[p].blk_head[m].page_head[l].lpn].hdd_flag == 2)
 							{
@@ -1901,7 +1903,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		if (req->size >= threshold_size && ssd->is_related_work == 1)
 		{
 			int write_hdd_time = 0;
-			char *avg = exec_disksim_syssim(seq_num, 0, 1);
+			char *avg = exec_disksim_syssim(ssd->current_time, lpn, last_lpn/lpn, 0);
 			write_hdd_time = (int)avg * seq_num;
 			if (ssd->HDDTime < ssd->current_time)
 			{
@@ -1909,17 +1911,16 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			}
 			write_hdd_time += (ssd->HDDTime - ssd->current_time);
 			ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
-			// req->response_time = req->time + write_hdd_time;
-			req->response_time = req->time + 1;
-			FILE *fp;
-			char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			fp = fopen(ret, "a+");
-			// 改成一个page-8KB大小
-			printf("req-size: %d\n", req->size);
-			printf("req-size-2: %d\n", req->size / 2 / 8);
-			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
-			fflush(fp);
-			fclose(fp);
+			req->response_time = req->time + write_hdd_time;
+			// FILE *fp;
+			// char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			// fp = fopen(ret, "a+");
+			// // 改成一个page-8KB大小
+			// printf("req-size: %d\n", req->size);
+			// printf("req-size-2: %d\n", req->size / 2 / 8);
+			// fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			// fflush(fp);
+			// fclose(fp); 
 		}
 		while(lpn<=last_lpn)
 		{

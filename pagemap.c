@@ -2652,9 +2652,9 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location = NULL;
 			free(location_check);
 			location_check = NULL;
-			FILE *fp;
-			char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			fp = fopen(ret, "a+");
+			// FILE *fp;
+			// char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			// fp = fopen(ret, "a+");
 			if (is_seq)
 			{
 				times++; //被查找的page
@@ -2663,7 +2663,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("times:%d\n", times);
 					abort();
 				}
-				char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+				char *avg = exec_disksim_syssim(ssd->current_time, arr[i], times, 0); //顺序写times次
 				write_hdd_time += (int)avg * times;
 				if (write_hdd_time < 0)
 				{
@@ -2671,17 +2671,17 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					abort();
 				}
 				// sscanf(line, "%lf %d %ld %d %d", &time, &devno, &logical_block_number,&size, &isread)
-				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				times = 0;
 			}
 			else
 			{
-				char *avg = exec_disksim_syssim(1, 0, 0);
+				char *avg = exec_disksim_syssim(ssd->current_time, arr[i], 1, 0);
 				write_hdd_time += (int)avg * 1;
-				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 			}
-			fflush(fp);
-			fclose(fp);
+			// fflush(fp);
+			// fclose(fp);
 		}
 	}
 	//no choise for block and hot list
@@ -2742,7 +2742,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					if (random_num != 0)
 					{
-						char *avg = exec_disksim_syssim(random_num, 0, 0);
+						char *avg = exec_disksim_syssim(1455591804186285022, 1007898, 1, 0);
 						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
 						write_hdd_time += (int)avg * random_num;
 						random_num = 0;
@@ -2818,7 +2818,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("times:%d\n", times);
 					abort();
 				}
-				char *avg = exec_disksim_syssim(times, 0, 1); //顺序写times次
+				char *avg = exec_disksim_syssim(1455591804186285022, 1007898, 1, 0); //顺序写times次
 				write_hdd_time += (int)avg * times;
 				if (write_hdd_time < 0)
 				{
@@ -2849,13 +2849,13 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				location->block = block;
 				location->page = i;
 				adjust_page_hdd(ssd, location, &transfer_size);
-				char *avg = exec_disksim_syssim(1, 0, 0);
+				char *avg = exec_disksim_syssim(ssd->current_time, lpn, 1, 0);
 				write_hdd_time += (int)avg * 1;
-				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
+				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
 			}
 		}
-		fflush(fp);
-		fclose(fp);
+		// fflush(fp);
+		// fclose(fp);
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 

@@ -1,20 +1,22 @@
 #include <disksim.h>
 
 /**
- * @brief 调用disksim接口，返回时间
- * 执行次数、读写、随机/顺序
- * @param times 
- * @param is_read 
- * @param is_sequential 
+ * @brief call disksim
+ * 
+ * @param time 
+ * @param lpn 
+ * @param size 
+ * @param isread 
  * @return char* 
  */
-char* exec_disksim_syssim(int times, int is_read, int is_sequential) 
+char* exec_disksim_syssim(double time, long lpn, int size, int isread) 
 {
 	char average[1024], command[1024];
 	FILE * temp;
 	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
 	//容器里面执行
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim %d %d %d > temp.txt", times, is_read, is_sequential);
+	// printf("%lf %d %ld %d %d\n", time, devno, logical_block_number,size, isread);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv  %lf %d %d > temp.txt", time, lpn, size, isread);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
@@ -24,6 +26,6 @@ char* exec_disksim_syssim(int times, int is_read, int is_sequential)
 		printf("the trace temp can't open\n");
 	}
 	fgets(average, 200, temp);
-	// printf("average: %d\n",average);
+	// printf("average: %d\n", atoi(average));
 	return atoi(average);
 }
