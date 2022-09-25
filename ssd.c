@@ -48,7 +48,10 @@ char* exec_disksim_syssim(char * tracename)
 	FILE * temp;
 	//容器里面执行
 	// printf("%lf %d %ld %d %d\n", time, devno, logical_block_number,size, isread);
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv  %s > temp.txt", tracename);
+	char cp_trace[32];
+	sprintf(cp_trace,"cp %s ../disksim/valid/",tracename);
+	system(cp_trace);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv %s > temp.txt", tracename);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
@@ -58,7 +61,13 @@ char* exec_disksim_syssim(char * tracename)
 		printf("the trace temp can't open\n");
 	}
 	fgets(average, 200, temp);
-	// printf("average: %d\n", atoi(average));
+	printf("average: %ld\n", atoi(average));
+	printf("average: %s\n", average);
+	if (average < 0)
+	{
+		abort();
+	}
+	
 	return atoi(average);
 	// if (is_read == 0)
 	// {
@@ -134,11 +143,11 @@ int  main(int argc, char* argv[])
 	#ifdef DEBUG
 	printf("enter main\n");
 	#endif
-	//顺序读10次
-	average = exec_disksim_syssim("tracename");
-	printf("average-s: %d\n",average);
-	average = exec_disksim_syssim("tracename");
-	printf("average-r: %d\n",average);
+	// //顺序读10次
+	// average = exec_disksim_syssim("tracename");
+	// printf("average-s: %d\n",average);
+	// average = exec_disksim_syssim("tracename");
+	// printf("average-r: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化

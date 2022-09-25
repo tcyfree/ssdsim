@@ -2833,12 +2833,14 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	{
 		FILE *fp;
 		char *ret = strrchr(ssd->tracefilename, '/') + 1;
-		fp = fopen(ret, "a+");
+		fp = fopen(ret, "w");
+		int num = 0;
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
 			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页*/
 			{
+				num++;
 				location = (struct local *)malloc(sizeof(struct local));
 				alloc_assert(location, "location");
 				memset(location, 0, sizeof(struct local));
@@ -2849,13 +2851,14 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				location->block = block;
 				location->page = i;
 				adjust_page_hdd(ssd, location, &transfer_size);
-				char *avg = exec_disksim_syssim("tracename");
-				write_hdd_time += (int)avg * 1;
-				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
 			}
 		}
-		// fflush(fp);
-		// fclose(fp);
+		printf("num:%d\n", num);
+		char *avg = exec_disksim_syssim(ret);
+		write_hdd_time += (int)avg * num;
+		fflush(fp);
+		fclose(fp);
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
