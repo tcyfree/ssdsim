@@ -37,22 +37,18 @@ int get_avg_time(int index, int seq)
 }
 
 /**
- * @brief call disksim
+ * @brief call disksim by trace
  * 
- * @param time 
- * @param lpn 
- * @param size 
- * @param isread 
+ * @param tracename 
  * @return char* 
  */
-char* exec_disksim_syssim(double time, long lpn, int size, int isread) 
+char* exec_disksim_syssim(char * tracename) 
 {
 	char average[1024], command[1024];
 	FILE * temp;
-	// sprintf(command, "docker exec ssd-disksim bash -c cd '/var/www/disksim/valid/ &&  ../src/syssim %d %d > temp.txt'", times, is_sequential);
 	//容器里面执行
 	// printf("%lf %d %ld %d %d\n", time, devno, logical_block_number,size, isread);
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv  %lf %ld %d %d > temp.txt", time, lpn, size, isread);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv  %s > temp.txt", tracename);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
@@ -139,9 +135,9 @@ int  main(int argc, char* argv[])
 	printf("enter main\n");
 	#endif
 	//顺序读10次
-	average = exec_disksim_syssim(1455591804186285022, 1007898, 1, 0);
+	average = exec_disksim_syssim("tracename");
 	printf("average-s: %d\n",average);
-	average = exec_disksim_syssim(1455591804186285022, 1007898, 1, 1);
+	average = exec_disksim_syssim("tracename");
 	printf("average-r: %d\n",average);
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
@@ -1903,7 +1899,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		if (req->size >= threshold_size && ssd->is_related_work == 1)
 		{
 			int write_hdd_time = 0;
-			char *avg = exec_disksim_syssim(ssd->current_time, lpn, last_lpn/lpn, 0);
+			char *avg = exec_disksim_syssim("tracename");
 			write_hdd_time = (int)avg * seq_num;
 			if (ssd->HDDTime < ssd->current_time)
 			{

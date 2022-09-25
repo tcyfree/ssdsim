@@ -1123,7 +1123,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			ssd->read_hdd_count++;
 			// 1. 从HDD读数据
 			int read_hdd_time = 0;
-			char *avg = exec_disksim_syssim(ssd->current_time, lpn, 1, 1);
+			char *avg = exec_disksim_syssim("tracename");
 			read_hdd_time += (int)avg * 1;
 			if (read_hdd_time < 0)
 			{

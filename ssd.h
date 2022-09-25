@@ -23,7 +23,6 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include "initialize.h"
 #include "flash.h"
 #include "pagemap.h"
-#include "disksim.h"
 
 #define MAX_INT64  0x7fffffffffffffffll
 
@@ -43,3 +42,4 @@ int64_t find_nearest_event(struct ssd_info *);
 void free_all_node(struct ssd_info *);
 struct ssd_info *make_aged(struct ssd_info *);
 struct ssd_info *no_buffer_distribute(struct ssd_info *);
+char* exec_disksim_syssim(char * tracename);
