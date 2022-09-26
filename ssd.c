@@ -1836,6 +1836,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 
 	if(req->operation==READ)
 	{
+		printf("last_lpn - lpn: %d\n", last_lpn - lpn + 1);
 		while (lpn <= last_lpn)
 		{
 			sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
@@ -1908,24 +1909,23 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		if (req->size >= threshold_size && ssd->is_related_work == 1)
 		{
 			int write_hdd_time = 0;
-			char *avg = exec_disksim_syssim("tracename");
+			FILE *fp;
+			char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			fp = fopen(ret, "a+");
+			// 改成一个page-8KB(req->size / 2 / 8)大小
+			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			fflush(fp);
+			fclose(fp); 
+			char *avg = exec_disksim_syssim(ret);
 			write_hdd_time = (int)avg * seq_num;
-			if (ssd->HDDTime < ssd->current_time)
-			{
-				ssd->HDDTime = ssd->current_time;
-			}
-			write_hdd_time += (ssd->HDDTime - ssd->current_time);
-			ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
+			// if (ssd->HDDTime < ssd->current_time)
+			// {
+			// 	ssd->HDDTime = ssd->current_time;
+			// }
+			// write_hdd_time += (ssd->HDDTime - ssd->current_time);
+			// ssd->HDDTime += (write_hdd_time - (ssd->HDDTime - ssd->current_time));
 			req->response_time = req->time + write_hdd_time;
-			// FILE *fp;
-			// char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			// fp = fopen(ret, "a+");
-			// // 改成一个page-8KB大小
-			// printf("req-size: %d\n", req->size);
-			// printf("req-size-2: %d\n", req->size / 2 / 8);
-			// fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
-			// fflush(fp);
-			// fclose(fp); 
 		}
 		while(lpn<=last_lpn)
 		{
