@@ -1914,11 +1914,21 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			fp = fopen(ret, "w");
 			// 改成一个page-8KB(req->size / 2 / 8)大小
 			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
-			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
+			// disksim: failed: in disk_buffer_sector_done() (disksim_diskctlr.c:4358)
+			int exec_num = 1;
+			if (seq_num > 64)
+			{
+				fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, 64, 0);
+				fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num - 64, 0);
+				exec_num = 2;
+			}else
+			{
+				fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
+			}
 			fflush(fp);
 			fclose(fp); 
 			char *avg = exec_disksim_syssim(ret);
-			write_hdd_time = (int)avg * 1;
+			write_hdd_time = (int)avg * exec_num;
 			// if (ssd->HDDTime < ssd->current_time)
 			// {
 			// 	ssd->HDDTime = ssd->current_time;
