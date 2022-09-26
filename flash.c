@@ -1116,42 +1116,6 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		//所有读请求对应的映射关系都已经经过了一定的初始化了
 		sub->state=(ssd->dram->map->map_entry[lpn].state&0x7fffffff);
 		sub_r=p_ch->subs_r_head; //sub_r指向目标channel的读子请求队列的队头 /*以下几行包括flag用于判断该读子请求队列中是否有与这个子请求相同的，有的话，将新的子请求直接赋为完成*/
-		//是否从HDD读数据
-		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
-		{
-			// 打包page被读
-			ssd->read_hdd_count++;
-			// 1. 从HDD读数据
-			int read_hdd_time = 0;
-			FILE *fp;
-			char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			fp = fopen(ret, "w");
-			printf("Read-HDD:%lld %d %d %d %d\n", ssd->current_time, 0, lpn, 1, 1);
-			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, 1, 1);
-			fflush(fp);
-			fclose(fp);
-			char *avg = exec_disksim_syssim(ret);
-			read_hdd_time += (int)avg * 1;
-			if (read_hdd_time < 0)
-			{
-				printf("read_hdd_time:%d\n", read_hdd_time);
-				abort();
-			}
-			if (ssd->HDDTime < ssd->current_time)
-			{
-				ssd->HDDTime = ssd->current_time;
-			}
-			read_hdd_time += (ssd->HDDTime - ssd->current_time);
-			ssd->HDDTime += (read_hdd_time - (ssd->HDDTime - ssd->current_time));
-
-			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
-			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
-			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
-			sub->next_state_predict_time=ssd->current_time+read_hdd_time;//下一状态预计时间为当前时间偏移read_hdd_time
-			sub->complete_time=ssd->current_time+read_hdd_time;
-			return sub;
-		}
-
 		//开始在channel的读请求队列中寻找是否存在有对应ppn的子请求节点
 		flag=0;
 		while (sub_r!=NULL)
@@ -1224,6 +1188,128 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 		// record_seq_write(ssd, lpn, 2);
 	}
 
+	//operation既不为READ也不为WRITE，那么说明传入的operation有误，此时需要释放前面动态申请的location且释放sub，打印出错信息并返回NULL。
+	else
+	{
+		free(sub->location);
+		sub->location=NULL;
+		free(sub);
+		sub=NULL;
+		printf("\nERROR ! Unexpected command.\n");
+		return NULL;
+	}
+
+	return sub;
+}
+
+struct sub_request * creat_sub_request_read_hdd(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type, int read_hdd_time)
+{
+	struct sub_request* sub=NULL,* sub_r=NULL;
+	struct channel_info * p_ch=NULL;
+	struct local * loc=NULL;
+	unsigned int flag=0;
+
+	sub = (struct sub_request*)malloc(sizeof(struct sub_request));     /*申请一个子请求sub的空间*/
+	alloc_assert(sub,"sub_request");
+	memset(sub,0, sizeof(struct sub_request));
+
+	if(sub==NULL)//分配失败的情况
+	{
+		return NULL;
+	}
+	//若分配成功，初始化子请求sub的成员变量值
+	sub->location=NULL;
+	sub->next_node=NULL;
+	sub->next_subs=NULL;
+	sub->update=NULL;
+	sub->target_page_type = target_page_type;
+
+	//随后，程序会进一步判断req也就是IO请求项是否为空，若非空则将新定义的sub挂接到req的sub队列队头上去
+	//否则若为空则说明创建的子请求是要挂到channel中的，程序会直接进行操作类型operation的判断。
+	//把当前请求插入到req的自请求队列里
+	if(req!=NULL)
+	{
+		sub->next_subs = req->subs;
+		req->subs = sub;
+	}
+
+	/*************************************************************************************
+	*在读操作的情况下，有一点非常重要就是要预先判断读子请求队列中是否有与这个子请求相同的，
+	*有的话，新子请求就不必再执行了，将新的子请求直接赋为完成
+	**************************************************************************************/
+	if (operation == READ)
+	{
+		//首先根据lpn在映射表里找ppn，然后根据ppn查找具体的地址（在哪一个channel、chip等）
+		loc = find_location(ssd,ssd->dram->map->map_entry[lpn].pn);
+		sub->location=loc;
+		sub->begin_time = ssd->current_time;
+		sub->current_state = SR_WAIT;
+		sub->current_time=MAX_INT64;
+		sub->next_state = SR_R_C_A_TRANSFER;
+		sub->next_state_predict_time=MAX_INT64;
+		sub->lpn = lpn;
+		sub->size=size;                         /*需要计算出该子请求的请求大小*/
+
+		p_ch = &ssd->channel_head[loc->channel];	//p_ch指向sub操作所在的通道
+		sub->ppn = ssd->dram->map->map_entry[lpn].pn;
+		sub->operation = READ;
+		//并设置sub->state即子页状态标志等于当前dram中lpn映射表结构中的state即子页映射有效标志位
+		//即让映射成功的子页可以直接提供读请求操作，
+		//此处之所以映射表中有读请求的映射关系可以直接使用是因为在经过读请求与处理函数的处理后，
+		//所有读请求对应的映射关系都已经经过了一定的初始化了
+		sub->state=(ssd->dram->map->map_entry[lpn].state&0x7fffffff);
+		sub_r=p_ch->subs_r_head; //sub_r指向目标channel的读子请求队列的队头 /*以下几行包括flag用于判断该读子请求队列中是否有与这个子请求相同的，有的话，将新的子请求直接赋为完成*/
+		//是否从HDD读数据
+		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+		{
+			// 打包page被读
+			ssd->read_hdd_count++;
+			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
+			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
+			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
+			sub->next_state_predict_time=ssd->current_time+read_hdd_time;//下一状态预计时间为当前时间偏移read_hdd_time
+			sub->complete_time=ssd->current_time+read_hdd_time;
+			return sub;
+		}
+
+		//开始在channel的读请求队列中寻找是否存在有对应ppn的子请求节点
+		flag=0;
+		while (sub_r!=NULL)
+		{
+			if (sub_r->ppn==sub->ppn)//在channel的读请求队列中寻找是否存在有对应ppn的子请求节点
+			{						 //因为创建读子请求时需要考虑到是否在该channel下的读子请求队列中已经存在具有目标ppn的读子请求节点
+				flag=1;//flag为1表示可以直接利用已经存在的读子请求节点(因为读取的都是同一个页的数据，没必要做两次重复的读取操作)
+				break;
+			}
+			sub_r=sub_r->next_node;
+		}
+		if (flag==0)//如果在channel下的sub_r读子请求队列中遍历完毕后尚未找到存在对应ppn的节点
+		{
+			//就判断p_ch所指的channel下的读子请求队列是否为空
+			if (p_ch->subs_r_tail!=NULL)//若不为空
+			{
+				//直接将新创建的sub插到队尾
+				p_ch->subs_r_tail->next_node=sub;
+				p_ch->subs_r_tail=sub;
+			}
+			else//若为空
+			{
+				//直接将新创建的sub插入空读子请求队列中
+				p_ch->subs_r_head=sub;
+				p_ch->subs_r_tail=sub;
+			}
+			record_read_hot(ssd, lpn);
+			// record_seq_write(ssd, lpn, 1);
+		}
+		else//flag=1，可以直接利用已经存在的读子请求节点。可以直接设置sub的相关状态标识
+		{
+			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
+			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
+			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
+			sub->next_state_predict_time=ssd->current_time+1000;//下一状态预计时间为当前时间偏移1000等
+			sub->complete_time=ssd->current_time+1000;
+		}
+	}
 	//operation既不为READ也不为WRITE，那么说明传入的operation有误，此时需要释放前面动态申请的location且释放sub，打印出错信息并返回NULL。
 	else
 	{

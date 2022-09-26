@@ -42,6 +42,7 @@ struct sub_request * find_read_sub_request(struct ssd_info * ssd, unsigned int c
 struct sub_request * find_write_sub_request(struct ssd_info * ssd, unsigned int channel);
 struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type);
 struct sub_request * creat_sub_request_pro(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type, unsigned int flag);
+struct sub_request * creat_sub_request_read_hdd(struct ssd_info * ssd,unsigned int lpn,int size,unsigned int state,struct request * req,unsigned int operation, unsigned int target_page_type, int read_hdd_time);
 
 struct sub_request *find_interleave_twoplane_page(struct ssd_info *ssd, struct sub_request *onepage,unsigned int command);
 int find_interleave_twoplane_sub_request(struct ssd_info * ssd, unsigned int channel,struct sub_request * sub_request_one,struct sub_request * sub_request_two,unsigned int command);
