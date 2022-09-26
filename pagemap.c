@@ -2664,17 +2664,17 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("times:%d\n", times);
 					abort();
 				}
-				all_count += times;
 				printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				times = 0;
 			}
 			else
 			{
-				all_count++;
 				printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 			}
+			// sequential write calculate once 
+			all_count++;
 		}
 		fflush(fp);
 		fclose(fp);

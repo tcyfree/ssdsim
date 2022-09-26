@@ -1913,12 +1913,12 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			char *ret = strrchr(ssd->tracefilename, '/') + 1;
 			fp = fopen(ret, "w");
 			// 改成一个page-8KB(req->size / 2 / 8)大小
-			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
-			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
+			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
+			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
 			fflush(fp);
 			fclose(fp); 
 			char *avg = exec_disksim_syssim(ret);
-			write_hdd_time = (int)avg * seq_num;
+			write_hdd_time = (int)avg * 1;
 			// if (ssd->HDDTime < ssd->current_time)
 			// {
 			// 	ssd->HDDTime = ssd->current_time;
