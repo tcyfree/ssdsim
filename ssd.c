@@ -63,7 +63,7 @@ char* exec_disksim_syssim(char * tracename)
 	fgets(average, 200, temp);
 	printf("average: %ld\n", atoi(average));
 	printf("average: %s\n", average);
-	if (average < 0)
+	if (atoi(average) < 0)
 	{
 		abort();
 	}

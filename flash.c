@@ -1126,6 +1126,7 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 			FILE *fp;
 			char *ret = strrchr(ssd->tracefilename, '/') + 1;
 			fp = fopen(ret, "w");
+			printf("Read-HDD:%lld %d %d %d %d\n", ssd->current_time, 0, lpn, 1, 1);
 			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, 1, 1);
 			fflush(fp);
 			fclose(fp);

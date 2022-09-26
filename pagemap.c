@@ -2851,14 +2851,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				location->block = block;
 				location->page = i;
 				adjust_page_hdd(ssd, location, &transfer_size);
+				printf("GC: %lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
 			}
 		}
+		// it's key to flush file before use
+		fflush(fp);
+		fclose(fp);
 		printf("num:%d\n", num);
 		char *avg = exec_disksim_syssim(ret);
 		write_hdd_time += (int)avg * num;
-		fflush(fp);
-		fclose(fp);
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
