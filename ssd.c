@@ -1911,7 +1911,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			int write_hdd_time = 0;
 			FILE *fp;
 			char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			fp = fopen(ret, "a+");
+			fp = fopen(ret, "w");
 			// 改成一个page-8KB(req->size / 2 / 8)大小
 			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);
 			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, lpn, req->size / 2 / 8, 0);

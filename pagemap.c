@@ -2508,6 +2508,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		int is_sequential = 0;
 		int random_num = 0;
 		int page_i = 0;
+		FILE *fp;
+		char *ret = strrchr(ssd->tracefilename, '/') + 1;
+		fp = fopen(ret, "w");
+		int all_count = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2652,9 +2656,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location = NULL;
 			free(location_check);
 			location_check = NULL;
-			// FILE *fp;
-			// char *ret = strrchr(ssd->tracefilename, '/') + 1;
-			// fp = fopen(ret, "a+");
 			if (is_seq)
 			{
 				times++; //被查找的page
@@ -2663,25 +2664,27 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("times:%d\n", times);
 					abort();
 				}
-				char *avg = exec_disksim_syssim("tracename"); //顺序写times次
-				write_hdd_time += (int)avg * times;
-				if (write_hdd_time < 0)
-				{
-					printf("write_hdd_time:%d\n", write_hdd_time);
-					abort();
-				}
-				// sscanf(line, "%lf %d %ld %d %d", &time, &devno, &logical_block_number,&size, &isread)
-				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				all_count += times;
+				printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				times = 0;
 			}
 			else
 			{
-				char *avg = exec_disksim_syssim("tracename");
-				write_hdd_time += (int)avg * 1;
-				// fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				all_count++;
+				printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 			}
-			// fflush(fp);
-			// fclose(fp);
+		}
+		fflush(fp);
+		fclose(fp);
+		printf("all_count:%d\n", all_count);
+		char *avg = exec_disksim_syssim(ret); //顺序写times次
+		write_hdd_time += (int)avg * all_count;
+		if (write_hdd_time < 0)
+		{
+			printf("write_hdd_time:%d\n", write_hdd_time);
+			abort();
 		}
 	}
 	//no choise for block and hot list
