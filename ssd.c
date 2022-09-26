@@ -1877,7 +1877,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 						char *avg = exec_disksim_syssim(ret);
 						int avg_lpn = (int)avg / seq_count;
 						int temp_last_lpn = temp_lpn - seq_count;
-						printf("seq-avg0:%d seq-avg_lpn0:%d  seq_count0:%d\n", (int)avg, avg_lpn, seq_count);
+						// printf("seq-avg0:%d seq-avg_lpn0:%d  seq_count0:%d\n", (int)avg, avg_lpn, seq_count);
 						while (seq_count != 0)
 						{
 							arr_index++;
@@ -1902,7 +1902,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				fclose(fp);
 				char *avg = exec_disksim_syssim(ret);
 				int avg_lpn = (int)avg / seq_count;
-				printf("seq-avg:%d seq-avg_lpn:%d  seq_count:%d\n", (int)avg, avg_lpn, seq_count);
+				// printf("seq-avg:%d seq-avg_lpn:%d  seq_count:%d\n", (int)avg, avg_lpn, seq_count);
 				int temp_last_lpn = temp_lpn - seq_count;
 				while (seq_count != 0)
 				{
@@ -1941,7 +1941,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 					abort();
 				} 
 				// 其实这步做不做应该对结果没有影响，后面写子请求覆盖了
-				sub = creat_sub_request_read_hdd(ssd, lpn, sub_size, sub_state, req, req->operation, 0, read_hdd_time);
+				// sub = creat_sub_request_read_hdd(ssd, lpn, sub_size, sub_state, req, req->operation, 0, read_hdd_time);
 				// writeback
 				int target_page_type;
 				int random_num;
