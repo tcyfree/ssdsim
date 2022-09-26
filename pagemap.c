@@ -2679,8 +2679,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		fflush(fp);
 		fclose(fp);
 		printf("all_count:%d\n", all_count);
-		char *avg = exec_disksim_syssim(ret); //顺序写times次
-		write_hdd_time += (int)avg * all_count;
+		if (all_count != 0)
+		{
+			char *avg = exec_disksim_syssim(ret); //顺序写times次
+			write_hdd_time += (int)avg * all_count;
+		}
 		if (write_hdd_time < 0)
 		{
 			printf("write_hdd_time:%d\n", write_hdd_time);
