@@ -2837,29 +2837,80 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	}
 	else
 	{
-		FILE *fp;
-		char *ret = strrchr(ssd->tracefilename, '/') + 1;
-		fp = fopen(ret, "w");
-		int num = 0;
+		int arr[1024], l = 0;
+		int page_i = 0;
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
 		{
 			int lpn = ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].lpn;
-			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页*/
+			if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[block].page_head[i].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*该页是有效页，需要copyback操作*/
 			{
-				num++;
-				location = (struct local *)malloc(sizeof(struct local));
-				alloc_assert(location, "location");
-				memset(location, 0, sizeof(struct local));
-				location->channel = channel;
-				location->chip = chip;
-				location->die = die;
-				location->plane = plane;
-				location->block = block;
-				location->page = i;
-				adjust_page_hdd(ssd, location, &transfer_size);
-				printf("GC: %lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
-				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, lpn, 1, 0);
+				arr[l] = lpn;
+				l++;
 			}
+		}
+		//先将block中有效lpn取出、排序
+		sort(arr, l);
+		FILE *fp;
+		char *ret = strrchr(ssd->tracefilename, '/') + 1;
+		fp = fopen(ret, "w");
+		int seq_count = 0; // 块内连续
+		int num = 0;
+		for (i = 0; i < l; i++)
+		{
+			if (i != (l - 1)) // 如果不是最后一个元素
+			{
+				int temp = arr[i];
+				if ((temp - arr[i + 1]) == -1)
+				{
+					seq_count++;
+				}
+				else
+				{
+					if (seq_count != 0)
+					{
+						seq_count++;
+						printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+						fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+						num++;
+						seq_count = 0;
+					}
+					else
+					{
+						printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+						fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+						num++;
+					}
+				}
+			}
+			else
+			{
+				if (seq_count != 0)
+				{
+					seq_count++;
+					printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+					num++;
+					seq_count = 0;
+				}
+				else
+				{
+					printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+					num++;
+				}
+			}
+
+			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
+			location = (struct local *)malloc(sizeof(struct local));
+			alloc_assert(location, "location");
+			memset(location, 0, sizeof(struct local));
+			location->channel = channel;
+			location->chip = chip;
+			location->die = die;
+			location->plane = plane;
+			location->block = block;
+			location->page = page_i;
+			adjust_page_hdd(ssd, location, &transfer_size);
 		}
 		// it's key to flush file before use
 		fflush(fp);
