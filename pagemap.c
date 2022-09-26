@@ -2859,8 +2859,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		fflush(fp);
 		fclose(fp);
 		printf("num:%d\n", num);
-		char *avg = exec_disksim_syssim(ret);
-		write_hdd_time += (int)avg * num;
+		if (num != 0)
+		{
+			char *avg = exec_disksim_syssim(ret);
+			write_hdd_time += (int)avg * num;
+		}
 	}
 	erase_operation(ssd,channel ,chip , die,plane ,block,1);	                                              /*执行完move_page操作后，就立即执行block的擦除操作*/
 
