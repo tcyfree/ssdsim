@@ -2876,7 +2876,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					else
 					{
-						printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+						// printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 						fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 						num++;
 					}
@@ -2894,7 +2894,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				else
 				{
-					printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+					// printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 					num++;
 				}
