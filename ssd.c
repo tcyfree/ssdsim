@@ -1918,7 +1918,10 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 
 	if(req->operation==READ)
 	{
-		printf("last_lpn - lpn: %d arr_index:%d\n", last_lpn - lpn + 1, arr_index);
+		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+		{
+			printf("last_lpn - lpn: %d arr_index:%d\n", last_lpn - lpn + 1, arr_index);
+		}
 		while (lpn <= last_lpn)
 		{
 			sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
