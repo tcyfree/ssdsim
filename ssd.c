@@ -61,7 +61,7 @@ char* exec_disksim_syssim(char * tracename)
 		printf("the trace temp can't open\n");
 	}
 	fgets(average, 200, temp);
-	printf("average: %ld\n", atoi(average));
+	// printf("average: %ld\n", atoi(average));
 	// printf("average: %s\n", average);
 	if (atoi(average) < 0)
 	{
@@ -2014,7 +2014,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			char *ret = strrchr(ssd->tracefilename, '/') + 1;
 			fp = fopen(ret, "w");
 			// 改成一个page-8KB(req->size / 2 / 8)大小
-			printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
+			// printf("ssdup: %lld %d %d %d %d\n", ssd->current_time, 0, lpn, seq_num, 0);
 			// disksim: failed: in disk_buffer_sector_done() (disksim_diskctlr.c:4358)
 			int exec_num = 1;
 			if (seq_num > 64)

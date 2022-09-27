@@ -2665,13 +2665,13 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					printf("times:%d\n", times);
 					abort();
 				}
-				printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				// printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				times = 0;
 			}
 			else
 			{
-				printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				// printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 			}
 			// sequential write calculate once 
@@ -2679,7 +2679,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 		fflush(fp);
 		fclose(fp);
-		printf("all_count:%d\n", all_count);
+		// printf("all_count:%d\n", all_count);
 		if (all_count != 0)
 		{
 			char *avg = exec_disksim_syssim(ret); //顺序写times次
@@ -2916,7 +2916,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// it's key to flush file before use
 		fflush(fp);
 		fclose(fp);
-		printf("num:%d\n", num);
+		// printf("num:%d\n", num);
 		if (num != 0)
 		{
 			char *avg = exec_disksim_syssim(ret);
