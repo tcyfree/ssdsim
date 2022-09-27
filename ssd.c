@@ -180,8 +180,8 @@ int  main(int argc, char* argv[])
 	make_aged(ssd);
 	get_aged_ratio(ssd);
 	//warm_up
-	pre_process_write_read(ssd);
-	get_aged_ratio(ssd);
+	// pre_process_write_read(ssd);
+	// get_aged_ratio(ssd);
 	//读请求的预处理函数 页操作请求预处理函数
 	pre_process_page(ssd); 
 	get_aged_ratio(ssd);
@@ -2005,7 +2005,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			target_page_type = TARGET_MSB;
 			}
 		int seq_num = last_lpn - lpn + 1; // number of sequential write to HDD
-		int threshold_size = 256; // threshold size to HDD
+		int threshold_size = 128; // threshold size to HDD
 		//sequential write to HDD 
 		if (req->size >= threshold_size && ssd->is_related_work == 1)
 		{
