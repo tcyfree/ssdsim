@@ -26,28 +26,28 @@ function runTrace() {
     echo "$title" >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line    
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 1
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 2 1    
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 4 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 8 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 16 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 32 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
     ./ssd 1 1 ../trace/$line 64 1     
-    cat ex.out | tail -n 1 >> out-batch.txt
+    tail -n 1 ex.out >> out-batch.txt
 
   done 
 }
