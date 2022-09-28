@@ -2,7 +2,7 @@
 rm -rf out-batch.txt
 rm -rf update-write.csv
 
-title="seq_num,   gc_count,   move_page_count,   read_avg,   write_avg"
+title="seq_num, gc_count, move_page_count,  read_avg,  write_avg,  update-hdd, non-gc, trace_ssd, wb_ssd, seq_hdd, rnd_hdd"
 
 runList="runList.txt" #runList存放准备运行的trace合集
 
