@@ -2667,12 +2667,14 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 				// printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				ssd->ssd_write_hdd_seq_count +=times;
 				times = 0;
 			}
 			else
 			{
 				// printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				ssd->ssd_write_hdd_rand_count++;
 			}
 			// sequential write calculate once 
 			all_count++;
@@ -2872,6 +2874,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						seq_count++;
 						printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
 						fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+						ssd->ssd_write_hdd_seq_count +=seq_count; // Count the number of sequential writes from SDD to HDD
 						num++;
 						seq_count = 0;
 					}
@@ -2879,6 +2882,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					{
 						// printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 						fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+						ssd->ssd_write_hdd_rand_count++; //Count the number of random writes from SSD to HDD
 						num++;
 					}
 				}
@@ -2890,6 +2894,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					seq_count++;
 					printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
 					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+					ssd->ssd_write_hdd_seq_count +=seq_count;
 					num++;
 					seq_count = 0;
 				}
@@ -2897,6 +2902,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				{
 					// printf("GC-rand: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
 					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i], 1, 0);
+					ssd->ssd_write_hdd_rand_count++;
 					num++;
 				}
 			}

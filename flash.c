@@ -1263,7 +1263,7 @@ struct sub_request * creat_sub_request_read_hdd(struct ssd_info * ssd,unsigned i
 		if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 		{
 			// 打包page被读
-			ssd->read_hdd_count++;
+			// ssd->read_hdd_count++;
 			sub->current_state = SR_R_DATA_TRANSFER;//当前状态为数据传输状态SR_R_DATA_TRANSFER
 			sub->current_time=ssd->current_time;//当前时间为系统当前时间代表立即执行这个读子请求
 			sub->next_state = SR_COMPLETE;//下一状态为完成状态SR_COMPLETE
