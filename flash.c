@@ -899,6 +899,10 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
  */
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
+	if (ssd->is_sequential != 1)
+	{
+		return;
+	}
 	int flag=0;                                                             /*flag表示为写入新数据腾空间是否完成，0表示需要进一步腾，1表示已经腾空*/
 	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
 	unsigned int lsn;
@@ -1538,6 +1542,10 @@ struct sub_request * creat_sub_request_pro(struct ssd_info * ssd,unsigned int lp
  */
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 {
+	if (ssd->is_sequential != 1)
+	{
+		return;
+	}
 	int flag=0;                                                             /*flag表示为写入新数据腾空间是否完成，0表示需要进一步腾，1表示已经腾空*/
 	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
 	unsigned int lsn;

@@ -2299,7 +2299,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 	// printf("active-block %d\n", active_block);
 	invalid_page = 0;
 	block = -1;
-	if (ssd->is_sequential != 1)
+	if (ssd->is_sequential == 0 || ssd->is_sequential == 3)
 	{
 		for (i = 0; i < ssd->parameter->block_plane; i++) /*查找最多invalid_page的块号，以及最大的invalid_page_num*/
 		{
@@ -2348,8 +2348,6 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 				}
 				else
 				{
-					struct read_hot *r_hot_q = ssd->read_hot_head;
-					struct write_hot *w_hot_q = ssd->write_hot_head;
 					int hot_r = 0;
 					int hot_w = 0;
 					//查找热读
@@ -2361,17 +2359,6 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 						// printf("avl-hot_r:%d\n", lpn);
 						hot_r = 1;
 					}
-					
-					// while (r_hot_q)
-					// {
-					// 	if (r_hot_q->lpn == lpn)
-					// 	{
-					// 		// printf("hot_read lpn %d\n", lpn);
-					// 		hot_r = 1;
-					// 		break;
-					// 	}
-					// 	r_hot_q = r_hot_q->next;
-					// }
 					//查找热写
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 					if (buffer_node != NULL)
@@ -2379,16 +2366,12 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 						// printf("avl-hot_r:%d\n", lpn);
 						hot_w = 1;
 					}
-					// while (w_hot_q)
-					// {
-					// 	if (w_hot_q->lpn == lpn)
-					// 	{
-					// 		// printf("hot_write lpn %d\n", lpn);
-					// 		hot_w = 1;
-					// 		break;
-					// 	}
-					// 	w_hot_q = w_hot_q->next;
-					// }
+					if ((hot_r == 1 || hot_w == 1) && ssd->is_sequential == 2)
+					{
+						printf("(hot_r == 1 || hot_w == 1) && ssd->is_sequential == 2\n");
+						abort();
+					}
+					
 					if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*普通Page，即在GC时直接写入到HDD中，将SSD中的Page擦除*/
 					{
 						if (hot_r == 0)
@@ -2526,9 +2509,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			int temp = arr[i];
 			seq_num = 0;
 			int j = 0, is_seq = 0;
-			// 热读 热写
-			struct read_hot *r_hot_q;
-			struct write_hot *w_hot_q;
 			int hot_r = 0;
 			int hot_w = 0;
 			for (j = arr[i] + 1; j <= max_lpn && l > 1; j++)
@@ -2549,8 +2529,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					// printf("j:%d\n", j);
 					is_seq = 1;
-					r_hot_q = ssd->read_hot_head;
-					w_hot_q = ssd->write_hot_head;
 					//查找热读
 					struct buffer_group *buffer_node = NULL, key;
 					key.group = j; //记录当前的lpn
@@ -2616,8 +2594,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				}
 			}
 			// 被查找的lpn:arr[i]
-			r_hot_q = ssd->read_hot_head;
-			w_hot_q = ssd->write_hot_head;
 			//查找热读
 			struct buffer_group *buffer_node = NULL, key;
 			key.group = arr[i];	//记录当前的lpn
@@ -2694,7 +2670,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		}
 	}
 	//no choise for block and hot list
-	else if (ssd->is_sequential == 2)
+	else if (ssd->is_sequential == 2 || ssd->is_sequential == 3)
 	{
 		int arr[1024], l = 0;
 		for (i = 0; i < ssd->parameter->page_block; i++) /*逐个检查每个block 中的page，如果有有效数据的page需要移动到其他地方存储*/
@@ -2722,10 +2698,16 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// {
 		// 	printf("arr: %d %d\n", arr[i], l);
 		// }
-		// int max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
+		// 最大lpn
+		max_lpn = ssd->parameter->page_block * ssd->parameter->block_plane * ssd->parameter->plane_die * ssd->parameter->die_chip * ssd->parameter->chip_num;
 		int seq_num = 0;
 		int is_sequential = 0;
 		int random_num = 0;
+		int page_i = 0;
+		FILE *fp;
+		char *ret = strrchr(ssd->tracefilename, '/') + 1;
+		fp = fopen(ret, "w");
+		int all_count = 0;
 		//给每个move_page查找顺序块
 		for (i = 0; i < l; i++)
 		{
@@ -2739,6 +2721,8 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			int temp = arr[i];
 			seq_num = 0;
 			int j = 0, is_seq = 0;
+			int hot_r = 0;
+			int hot_w = 0;
 			for (j = arr[i] + 1; j <= max_lpn && l > 1; j++)
 			{
 				//有可能会很多连续的，所以加个判断限制
@@ -2749,13 +2733,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				//有效且非hdd
 				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && j - temp == 1)
 				{
-					if (random_num != 0)
-					{
-						char *avg = exec_disksim_syssim("tracename");
-						// char *avg = (char)5000000; // 由于每次都是重头开始算，这样和random比较不划算。到时候统计一下该块有多少连续lpn个数，加到总时间上。
-						write_hdd_time += (int)avg * random_num;
-						random_num = 0;
-					}
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 					if (location_check->chip != chip && location_check->channel != channel)
@@ -2763,6 +2740,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						break;
 					}
 					is_seq = 1;
+					//查找的page是否是当前块
 					if (location_check->channel == channel && location_check->chip == chip && location_check->die == die && location_check->plane == plane && location_check->block == block)
 					{
 						location = (struct local *)malloc(sizeof(struct local));
@@ -2795,9 +2773,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					break;
 				}
 			}
-			// 被查找的lpn:arr[i]
-			struct read_hot *hot = ssd->read_hot_head;
-			int hot_flag = 0;
+			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
 			location = (struct local *)malloc(sizeof(struct local));
 			alloc_assert(location, "location");
 			memset(location, 0, sizeof(struct local));
@@ -2806,36 +2782,55 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->die = die;
 			location->plane = plane;
 			location->block = block;
-			int page_i;
-			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
 			location->page = page_i;
-			adjust_page_hdd(ssd, location, &transfer_size);
-			free(location);
-			location = NULL;
-			if (is_seq)
+			if (hot_r == 1 && hot_w == 0)
 			{
-				times++; //被查找的page
+				printf("rule1-0 %d\n", j);
+				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
+				page_move_count++;
 			}
 			else
 			{
-				random_num++;
+				adjust_page_hdd(ssd, location, &transfer_size);
 			}
-			if (times != 0)
+			free(location);
+			location = NULL;
+			free(location_check);
+			location_check = NULL;
+			if (is_seq)
 			{
+				times++; //被查找的page
 				if (times == 1)
 				{
 					printf("times:%d\n", times);
 					abort();
 				}
-				char *avg = exec_disksim_syssim("tracename"); //顺序写times次
-				write_hdd_time += (int)avg * times;
-				if (write_hdd_time < 0)
-				{
-					printf("write_hdd_time:%d\n", write_hdd_time);
-					abort();
-				}
+				// printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
+				ssd->ssd_write_hdd_seq_count +=times;
+				times = 0;
 			}
-			times = 0;
+			else
+			{
+				// printf("%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], 1, 0);
+				ssd->ssd_write_hdd_rand_count++;
+			}
+			// sequential write calculate once 
+			all_count++;
+		}
+		fflush(fp);
+		fclose(fp);
+		// printf("all_count:%d\n", all_count);
+		if (all_count != 0)
+		{
+			char *avg = exec_disksim_syssim(ret); //顺序写times次
+			write_hdd_time += (int)avg * all_count;
+		}
+		if (write_hdd_time < 0)
+		{
+			printf("write_hdd_time:%d\n", write_hdd_time);
+			abort();
 		}
 	}
 	else
