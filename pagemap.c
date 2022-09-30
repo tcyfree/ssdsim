@@ -2157,15 +2157,11 @@ Status adjust_page_hdd(struct ssd_info * ssd, struct local *location, unsigned i
  * @brief 查找的连续page对应block置为无效
  * 
  * @param ssd 
- * @param location 
- * @param transfer_size 
+ * @param lpn 
  * @return Status 
  */
-Status sequential_page_invalid(struct ssd_info * ssd, struct local *location, unsigned int * transfer_size)
+Status sequential_page_invalid(struct ssd_info * ssd, unsigned int lpn)
 {
-	unsigned int lpn=0, page_num=0,valid_state=0;
-	lpn=ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn;
-
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].free_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].lpn=0;
 	// 这里应该注释掉吧，其实是有效的页，可以正常访问
@@ -2577,10 +2573,10 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 						if (hot_w == 0)
 						{
 							// printf("rule2 %d\n", j);
-							location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
+							// location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
 							// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
 							//  ssd->dram->map->map_entry[j].hdd_flag = 2;
-							sequential_page_invalid(ssd, location, &transfer_size);
+							sequential_page_invalid(ssd, j);
 						}
 					}
 					temp = j;
@@ -2660,7 +2656,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// printf("all_count:%d\n", all_count);
 		if (all_count != 0)
 		{
-			char *avg = exec_disksim_syssim(ret); //顺序写times次
+			char *avg = exec_disksim_syssim(ret); 
 			write_hdd_time += (int)avg * all_count;
 		}
 		if (write_hdd_time < 0)
@@ -2760,8 +2756,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					}
 					else
 					{
-						location = find_location(ssd, ssd->dram->map->map_entry[j].pn);
-						sequential_page_invalid(ssd, location, &transfer_size);
+						sequential_page_invalid(ssd, j);
 					}
 					temp = j;
 					//热数据也要算到打包数量块里面
@@ -2783,16 +2778,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			location->plane = plane;
 			location->block = block;
 			location->page = page_i;
-			if (hot_r == 1 && hot_w == 0)
-			{
-				printf("rule1-0 %d\n", j);
-				move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
-				page_move_count++;
-			}
-			else
-			{
-				adjust_page_hdd(ssd, location, &transfer_size);
-			}
+			adjust_page_hdd(ssd, location, &transfer_size);
 			free(location);
 			location = NULL;
 			free(location_check);
@@ -2824,7 +2810,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 		// printf("all_count:%d\n", all_count);
 		if (all_count != 0)
 		{
-			char *avg = exec_disksim_syssim(ret); //顺序写times次
+			char *avg = exec_disksim_syssim(ret); 
 			write_hdd_time += (int)avg * all_count;
 		}
 		if (write_hdd_time < 0)
