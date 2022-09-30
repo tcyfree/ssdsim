@@ -2873,7 +2873,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 				if (seq_count != 0)
 				{
 					seq_count++;
-					printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
+					// printf("GC-seq: %lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
 					fprintf(fp, "%lld %d %ld %d %d\n", ssd->current_time, 0, arr[i - seq_count + 1], seq_count, 0);
 					ssd->ssd_write_hdd_seq_count +=seq_count;
 					num++;

@@ -1834,88 +1834,88 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 	lpn=req->lsn/ssd->parameter->subpage_page;
 	last_lpn=(req->lsn+req->size-1)/ssd->parameter->subpage_page;
 	first_lpn=req->lsn/ssd->parameter->subpage_page;
-	// // 统计读HDD的lpn，主要是把sequential lpn当成顺序写。统计到数组里面，后面查找对应时间，加到
-	// int temp_lpn = lpn;
-	// int seq_count = 0;
-	// int len = 512;
-    // int arr[len][2];
-	// int arr_index = -1;
-	// if (req->operation == READ)
-	// {
-	// 	// 如果只有一个
-	// 	if (temp_lpn == last_lpn && ssd->dram->map->map_entry[lpn].hdd_flag == 1)
-	// 	{
-	// 		FILE *fp;
-	// 		char *ret = strrchr(ssd->tracefilename, '/') + 1;
-	// 		fp = fopen(ret, "w");
-	// 		printf("Read-HDD-rand:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn, 1, 1);
-	// 		fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn, 1, 1);
-	// 		fflush(fp);
-	// 		fclose(fp);
-	// 		char *avg = exec_disksim_syssim(ret);
-	// 		arr_index++;
-	// 		arr[arr_index][0] = temp_lpn;
-	// 		arr[arr_index][1] = (int)avg;
-	// 	}
-	// 	else
-	// 	{
-	// 		while (temp_lpn <= last_lpn)
-	// 		{
-	// 			if (ssd->dram->map->map_entry[temp_lpn].hdd_flag == 1)
-	// 			{
-	// 				seq_count++;
-	// 			} else
-	// 			{
-	// 				if (seq_count != 0)
-	// 				{
-	// 					FILE *fp;
-	// 					char *ret = strrchr(ssd->tracefilename, '/') + 1;
-	// 					fp = fopen(ret, "w");
-	// 					printf("Read-HDD-seq:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
-	// 					fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
-	// 					fflush(fp);
-	// 					fclose(fp);
-	// 					char *avg = exec_disksim_syssim(ret);
-	// 					int avg_lpn = (int)avg / seq_count;
-	// 					int temp_last_lpn = temp_lpn - seq_count;
-	// 					// printf("seq-avg0:%d seq-avg_lpn0:%d  seq_count0:%d\n", (int)avg, avg_lpn, seq_count);
-	// 					while (seq_count != 0)
-	// 					{
-	// 						arr_index++;
-	// 						arr[arr_index][0] = temp_last_lpn;
-	// 						arr[arr_index][1] = avg_lpn;
-	// 						seq_count--;
-	// 						temp_last_lpn++;
-	// 					}
-	// 				}
-	// 			}
-	// 			temp_lpn++;
-	// 		}
-	// 		// 全部读HDD
-	// 		if (seq_count != 0)
-	// 		{
-	// 			FILE *fp;
-	// 			char *ret = strrchr(ssd->tracefilename, '/') + 1;
-	// 			fp = fopen(ret, "w");
-	// 			printf("Read-HDD-seq:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
-	// 			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
-	// 			fflush(fp);
-	// 			fclose(fp);
-	// 			char *avg = exec_disksim_syssim(ret);
-	// 			int avg_lpn = (int)avg / seq_count;
-	// 			// printf("seq-avg:%d seq-avg_lpn:%d  seq_count:%d\n", (int)avg, avg_lpn, seq_count);
-	// 			int temp_last_lpn = temp_lpn - seq_count;
-	// 			while (seq_count != 0)
-	// 			{
-	// 				arr_index++;
-	// 				arr[arr_index][0] = temp_last_lpn;
-	// 				arr[arr_index][1] = avg_lpn;
-	// 				seq_count--;
-	// 				temp_last_lpn++;
-	// 			}
-	// 		}
-	// 	}
-	// }
+	// 统计读HDD的lpn，主要是把sequential lpn当成顺序写。统计到数组里面，后面查找对应时间，加到
+	int temp_lpn = lpn;
+	int seq_count = 0;
+	int len = 512;
+    int arr[len][2];
+	int arr_index = -1;
+	if (req->operation == READ)
+	{
+		// 如果只有一个
+		if (temp_lpn == last_lpn && ssd->dram->map->map_entry[lpn].hdd_flag == 1)
+		{
+			FILE *fp;
+			char *ret = strrchr(ssd->tracefilename, '/') + 1;
+			fp = fopen(ret, "w");
+			// printf("Read-HDD-rand:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn, 1, 1);
+			fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn, 1, 1);
+			fflush(fp);
+			fclose(fp);
+			char *avg = exec_disksim_syssim(ret);
+			arr_index++;
+			arr[arr_index][0] = temp_lpn;
+			arr[arr_index][1] = (int)avg;
+		}
+		else
+		{
+			while (temp_lpn <= last_lpn)
+			{
+				if (ssd->dram->map->map_entry[temp_lpn].hdd_flag == 1)
+				{
+					seq_count++;
+				} else
+				{
+					if (seq_count != 0)
+					{
+						FILE *fp;
+						char *ret = strrchr(ssd->tracefilename, '/') + 1;
+						fp = fopen(ret, "w");
+						// printf("Read-HDD-seq:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
+						fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
+						fflush(fp);
+						fclose(fp);
+						char *avg = exec_disksim_syssim(ret);
+						int avg_lpn = (int)avg / seq_count;
+						int temp_last_lpn = temp_lpn - seq_count;
+						// printf("seq-avg0:%d seq-avg_lpn0:%d  seq_count0:%d\n", (int)avg, avg_lpn, seq_count);
+						while (seq_count != 0)
+						{
+							arr_index++;
+							arr[arr_index][0] = temp_last_lpn;
+							arr[arr_index][1] = avg_lpn;
+							seq_count--;
+							temp_last_lpn++;
+						}
+					}
+				}
+				temp_lpn++;
+			}
+			// 全部读HDD
+			if (seq_count != 0)
+			{
+				FILE *fp;
+				char *ret = strrchr(ssd->tracefilename, '/') + 1;
+				fp = fopen(ret, "w");
+				// printf("Read-HDD-seq:%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
+				fprintf(fp, "%lld %d %d %d %d\n", ssd->current_time, 0, temp_lpn - seq_count, seq_count, 1);
+				fflush(fp);
+				fclose(fp);
+				char *avg = exec_disksim_syssim(ret);
+				int avg_lpn = (int)avg / seq_count;
+				// printf("seq-avg:%d seq-avg_lpn:%d  seq_count:%d\n", (int)avg, avg_lpn, seq_count);
+				int temp_last_lpn = temp_lpn - seq_count;
+				while (seq_count != 0)
+				{
+					arr_index++;
+					arr[arr_index][0] = temp_last_lpn;
+					arr[arr_index][1] = avg_lpn;
+					seq_count--;
+					temp_last_lpn++;
+				}
+			}
+		}
+	}
 
 	if(req->operation==READ)
 	{
@@ -1923,25 +1923,25 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		{
 			sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
 			sub_size = size(sub_state);
-			// int read_hdd_time = 0;
 			//读HDD后，将HDD写回SSD(直接创建对应写请求即可)
+			int read_hdd_time = 0;
+			//查找对应lpn读的平均时间
 			if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 			{
-				// int i;
-				// for (i = 0; i <= arr_index; i++)
-				// {
-				// 	if (arr[i][0] == lpn)
-				// 	{
-				// 		read_hdd_time = arr[i][1];
-				// 	}
-				// }
-				// if (read_hdd_time == 0)
-				// {
-				// 	printf("read_hdd_time == 0\n");
-				// 	abort();
-				// } 
-				// 其实这步做不做应该对结果没有影响，后面写子请求覆盖了
-				// sub = creat_sub_request_read_hdd(ssd, lpn, sub_size, sub_state, req, req->operation, 0, read_hdd_time);
+				int i;
+				for (i = 0; i <= arr_index; i++)
+				{
+					if (arr[i][0] == lpn)
+					{
+						read_hdd_time = arr[i][1];
+					}
+				}
+				if (read_hdd_time == 0)
+				{
+					printf("read_hdd_time == 0\n");
+					abort();
+				} 
+				sub = creat_sub_request_read_hdd(ssd, lpn, sub_size, sub_state, req, req->operation, 0, read_hdd_time);
 				// writeback
 				int target_page_type;
 				int random_num;

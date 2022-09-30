@@ -1092,7 +1092,12 @@ struct sub_request * creat_sub_request(struct ssd_info * ssd,unsigned int lpn,in
 	{
 		sub->next_subs = req->subs;
 		req->subs = sub;
+	} else
+	{
+		printf("creat_sub_request-req == NULL\n");
+		abort();
 	}
+	
 
 	/*************************************************************************************
 	*在读操作的情况下，有一点非常重要就是要预先判断读子请求队列中是否有与这个子请求相同的，
@@ -1235,6 +1240,10 @@ struct sub_request * creat_sub_request_read_hdd(struct ssd_info * ssd,unsigned i
 	{
 		sub->next_subs = req->subs;
 		req->subs = sub;
+	} else
+	{
+		printf("creat_sub_request_read_hdd-req == NULL\n");
+		// abort();
 	}
 
 	/*************************************************************************************
@@ -1368,6 +1377,10 @@ struct sub_request * creat_sub_request_pro(struct ssd_info * ssd,unsigned int lp
 	{
 		sub->next_subs = req->subs;
 		req->subs = sub;
+	} else
+	{
+		printf("req == NULL\n");
+		abort();
 	}
 
 	if(operation == WRITE)
