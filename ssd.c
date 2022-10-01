@@ -1165,7 +1165,8 @@ void trace_output(struct ssd_info* ssd){
 				if (req->operation==READ)
 				{
 					ssd->read_request_count++;
-					ssd->read_avg=ssd->read_avg+(end_time-req->time);
+					ssd->read_avg=ssd->read_avg+(end_time-req->time)+ssd->direct_read_hdd_time;
+					ssd->direct_read_hdd_time = 0;//读HDD的时间置为0
 					//=============================================
 					ssd->newest_read_request_count++;
 					ssd->newest_read_avg = ssd->newest_read_avg+(end_time-req->time);
@@ -1853,9 +1854,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 			fflush(fp);
 			fclose(fp);
 			char *avg = exec_disksim_syssim(ret);
-			arr_index++;
-			arr[arr_index][0] = temp_lpn;
-			arr[arr_index][1] = (int)avg;
+			ssd->direct_read_hdd_time +=(int)avg;
 		}
 		else
 		{
@@ -1876,17 +1875,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 						fflush(fp);
 						fclose(fp);
 						char *avg = exec_disksim_syssim(ret);
-						int avg_lpn = (int)avg / seq_count;
-						int temp_last_lpn = temp_lpn - seq_count;
-						// printf("seq-avg0:%d seq-avg_lpn0:%d  seq_count0:%d\n", (int)avg, avg_lpn, seq_count);
-						while (seq_count != 0)
-						{
-							arr_index++;
-							arr[arr_index][0] = temp_last_lpn;
-							arr[arr_index][1] = avg_lpn;
-							seq_count--;
-							temp_last_lpn++;
-						}
+						ssd->direct_read_hdd_time +=(int)avg;
 					}
 				}
 				temp_lpn++;
@@ -1902,17 +1891,7 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 				fflush(fp);
 				fclose(fp);
 				char *avg = exec_disksim_syssim(ret);
-				int avg_lpn = (int)avg / seq_count;
-				// printf("seq-avg:%d seq-avg_lpn:%d  seq_count:%d\n", (int)avg, avg_lpn, seq_count);
-				int temp_last_lpn = temp_lpn - seq_count;
-				while (seq_count != 0)
-				{
-					arr_index++;
-					arr[arr_index][0] = temp_last_lpn;
-					arr[arr_index][1] = avg_lpn;
-					seq_count--;
-					temp_last_lpn++;
-				}
+				ssd->direct_read_hdd_time +=(int)avg;
 			}
 		}
 	}
@@ -1923,25 +1902,8 @@ struct ssd_info *no_buffer_distribute(struct ssd_info *ssd)
 		{
 			sub_state = (ssd->dram->map->map_entry[lpn].state & 0x7fffffff);
 			sub_size = size(sub_state);
-			//读HDD后，将HDD写回SSD(直接创建对应写请求即可)
-			int read_hdd_time = 0;
-			//查找对应lpn读的平均时间
 			if (ssd->dram->map->map_entry[lpn].hdd_flag == 1)
 			{
-				int i;
-				for (i = 0; i <= arr_index; i++)
-				{
-					if (arr[i][0] == lpn)
-					{
-						read_hdd_time = arr[i][1];
-					}
-				}
-				if (read_hdd_time == 0)
-				{
-					printf("read_hdd_time == 0\n");
-					abort();
-				} 
-				sub = creat_sub_request_read_hdd(ssd, lpn, sub_size, sub_state, req, req->operation, 0, read_hdd_time);
 				// writeback
 				int target_page_type;
 				int random_num;

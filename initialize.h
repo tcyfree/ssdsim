@@ -246,6 +246,7 @@ struct ssd_info{
 	unsigned long gc_count;
 	unsigned long trace_write_count; // trace write to SDD count
 	unsigned long writeback_count;   // HDD writeback to SSD count
+	unsigned int direct_read_hdd_time;   // read HDD directly miss SSD
 	unsigned long direct_erase_count;
 	unsigned long copy_back_count;
 	unsigned long m_plane_read_count;
