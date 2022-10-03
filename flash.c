@@ -4698,7 +4698,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 				{
 					// printf("is-writeback is 1!\n");
 					ssd->writeback_count++;
-					ssd->dram->map->map_entry[sub->lpn].hdd_flag == 0;
+					ssd->dram->map->map_entry[sub->lpn].hdd_flag = 0;
 				}
 				if (sub->no_ope == 1)
 				{
