@@ -1171,7 +1171,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	*/
 	if(ssd->dram->map->map_entry[lpn].state==0)         //没有映射关系，表示该子请求不是更新请求，可以直接写入         /*this is the first logical page*/
 	{
-		// 可能之前被写入HDD没有被回写
+		// 可能之前被写入HDD没有被回写,直接写入后更新hdd_flag为0
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			if (sub->no_ope == 1)
@@ -1235,7 +1235,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 		location=NULL;
 		ssd->dram->map->map_entry[lpn].pn=find_ppn(ssd,channel,chip,die,plane,block,page);
 		ssd->dram->map->map_entry[lpn].state=(ssd->dram->map->map_entry[lpn].state|sub->state);
-		//逻辑页更新之后，将hdd_flag置为0
+		//逻辑页更新之后，将hdd_flag置为0(只有hdd_flag=2会被更新)
 		if (ssd->dram->map->map_entry[lpn].hdd_flag != 0)
 		{
 			// printf("update data hdd_flag:%d lpn:%d\n", ssd->dram->map->map_entry[lpn].hdd_flag, lpn);
@@ -2167,10 +2167,11 @@ Status sequential_page_invalid(struct ssd_info * ssd, unsigned int lpn)
 	// 这里应该注释掉吧，其实是有效的页，可以正常访问
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].page_head[location->page].valid_state=0;
 	// ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].blk_head[location->block].invalid_page_num++;
-	if (lpn != -1)
-	{
-		ssd->dram->map->map_entry[lpn].hdd_flag=2;
-	}
+	// if (lpn != -1)
+	// {
+	// 	ssd->dram->map->map_entry[lpn].hdd_flag=2;
+	// }
+	ssd->dram->map->map_entry[lpn].hdd_flag=2;
 	// ssd->dram->map->map_entry[lpn].pn=0;
 	// ssd->dram->map->map_entry[lpn].state=0;
 
@@ -2515,7 +2516,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					break;
 				}
 				//有效且非hdd
-				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && j - temp == 1)
+				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
 				{
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
@@ -2727,7 +2728,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					break;
 				}
 				//有效且非hdd
-				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && j - temp == 1)
+				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
 				{
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
