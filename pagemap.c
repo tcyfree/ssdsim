@@ -2516,7 +2516,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					break;
 				}
 				//有效且非hdd
-				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
+				if (ssd->dram->map->map_entry[j].state > 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
 				{
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
@@ -2728,7 +2728,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					break;
 				}
 				//有效且非hdd
-				if (ssd->dram->map->map_entry[j].state != 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
+				if (ssd->dram->map->map_entry[j].state > 0 && ssd->dram->map->map_entry[j].hdd_flag == 0 && (j - temp == 1))
 				{
 					//查找的page在同一通道
 					location_check = find_location(ssd, ssd->dram->map->map_entry[j].pn);
