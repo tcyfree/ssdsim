@@ -13,12 +13,6 @@ tail -n 1 ex.out >> out.txt
 ./ssd 1 1 $1 1     
 tail -n 1 ex.out >> out.txt
 
-./ssd 1 1 $1 8 3     
-tail -n 1 ex.out >> out.txt
-
-./ssd 1 1 $1 8 2    
-tail -n 1 ex.out >> out.txt
-
 ./ssd 1 1 $1 8 1     
 tail -n 1 ex.out >> out.txt
 
