@@ -51,7 +51,7 @@ char* exec_disksim_syssim(char * tracename)
 	char cp_trace[32];
 	sprintf(cp_trace,"cp %s ../disksim/valid/",tracename);
 	system(cp_trace);
-	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah4LP.parv %s > temp.txt", tracename);
+	sprintf(command, "cd ../disksim/valid/ && ../src/syssim cheetah9LP.parv %s > temp.txt", tracename);
 	// printf("%s\n", command);
 	int i = system(command);
 	// printf("i: %d\n", i);
