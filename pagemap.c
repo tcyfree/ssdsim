@@ -2559,6 +2559,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							printf("rule1 %d\n", j);
 							move_page(ssd, location, &transfer_size); /*真实的move_page操作*/
 							page_move_count++;
+							break;
 						}
 						else
 						{
@@ -2638,11 +2639,6 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			if (is_seq)
 			{
 				times++; //被查找的page
-				if (times == 1)
-				{
-					printf("times:%d\n", times);
-					abort();
-				}
 				// printf("seq: %lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				fprintf(fp, "%lld %d %ld %d %d\n",ssd->current_time, 0, arr[i], times, 0);
 				ssd->ssd_write_hdd_seq_count +=times;
