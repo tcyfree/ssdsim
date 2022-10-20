@@ -2579,7 +2579,11 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 							// hdd_flag=2表示连续块，下次读从SSD读取，表示热数据
 							//  ssd->dram->map->map_entry[j].hdd_flag = 2;
 							sequential_page_invalid(ssd, j);
+						} else // break search 
+						{
+							break;
 						}
+						
 					}
 					temp = j;
 					//热数据也要算到打包数量块里面
