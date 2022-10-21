@@ -2369,18 +2369,14 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 						printf("(hot_r == 1 || hot_w == 1) && ssd->is_sequential == 2\n");
 						abort();
 					}
-					
-					if (ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].blk_head[i].page_head[j].valid_state > 0 && ssd->dram->map->map_entry[lpn].hdd_flag == 0) /*普通Page，即在GC时直接写入到HDD中，将SSD中的Page擦除*/
-					{
-						if (hot_r == 0)
-						{
-							page3++;
-						}
-					}
 					if (hot_r == 1 && hot_w == 0)
 					{
 						page4++;
+					} else
+					{
+						page3++;
 					}
+					
 				}
 			}
 			// printf("%d %d %d %d\n", page1, page2, page3, page4);
