@@ -151,8 +151,6 @@ int  main(int argc, char* argv[])
 	ssd=(struct ssd_info*)malloc(sizeof(struct ssd_info));  //为ssd分配内存
 	alloc_assert(ssd,"ssd");
 	memset(ssd,0, sizeof(struct ssd_info)); //将ssd指向的那部分结构体内存空间清零，相当于初始化
-	//delete tail_latency 
-	system("rm tail_latency.csv");
 	//*****************************************************
 	int sTIMES, speed_up;
 	printf("Read parameters to the main function.\n");
@@ -173,6 +171,12 @@ int  main(int argc, char* argv[])
 	}
 	printf("Running trace file: %s.\n", ssd->tracefilename);
 	//*****************************************************
+	//delete tail_latency
+	char delLTLlFilename[32];
+	char *tracename = strrchr(ssd->tracefilename, '/') + 1;
+	sprintf(delLTLlFilename,"%s%d%d%s","rm -rf ",ssd->is_sequential,ssd->is_related_work,tracename); 
+	printf("command:%s\n",delLTLlFilename);
+	system(delLTLlFilename);
 
 	ssd=initiation(ssd); //初始化ssd（重点函数模块，需要仔细阅读）
 	printf("Chip_channel: %d, %d\n", ssd->parameter->chip_channel[0], ssd->parameter->chip_num); //（各channel上chip数量，整个SSD上chip数量）
@@ -1099,7 +1103,10 @@ void trace_output(struct ssd_info* ssd){
 				fprintf(ssd->outputfile,"%16lld %10d %6d %2d %16lld %16lld %10lld\n",req->time,req->lsn, req->size, req->operation, start_time, end_time, end_time-req->time);
 				fflush(ssd->outputfile);
 				FILE *fp;
-				fp = fopen("./tail_latency.csv", "a+");
+				char LTLlFilename[32];
+				char *tracename = strrchr(ssd->tracefilename, '/') + 1;
+				sprintf(LTLlFilename,"%d%d%s",ssd->is_sequential,ssd->is_related_work,tracename); 
+				fp = fopen(LTLlFilename, "a+");
 				fprintf(fp, "%lld,", end_time-req->time);
 				fflush(fp);
 				fclose(fp);
