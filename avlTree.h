@@ -4,6 +4,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define AVL_NULL		(TREE_NODE *)0
 

@@ -1221,7 +1221,8 @@ TREE_NODE *avlTreeFind
 	TREE_NODE *temp;
 	temp = (TREE_NODE *)avlTreeLookup(pTree, pTree->pTreeHeader , pKeyNode);
 	end_t = clock();
-   	total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+   	// total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+   	total_t = (double)(end_t - start_t);
    	printf("avlTreeFind-Time：%f\n", total_t  );		
 	return temp;
 }
