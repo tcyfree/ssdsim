@@ -136,6 +136,13 @@ non_aged的ssd是新的ssd，无失效页，失效页的比例可以在初始化
 *********************************************************************************************************************************/
 int  main(int argc, char* argv[])
 {
+	// clock_t start_t, end_t;
+   	// double total_t;
+   	// start_t = clock();
+   	// end_t = clock();
+   	// total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+   	// printf("CPU 占用的总时间：%f\n", total_t  );
+
 	unsigned  int i,j,k;
 	double aged_ratio = 0;
 	struct ssd_info *ssd;

@@ -1213,10 +1213,17 @@ TREE_NODE *avlTreeFind
  TREE_NODE *pKeyNode
  )
 {
+	clock_t start_t, end_t;
+   	double total_t;
+   	start_t = clock();
 	if(!pTree || !pTree->count || !pTree->pTreeHeader)
 		return AVL_NULL;
-
-	return (TREE_NODE *)avlTreeLookup(pTree, pTree->pTreeHeader , pKeyNode);
+	TREE_NODE *temp;
+	temp = (TREE_NODE *)avlTreeLookup(pTree, pTree->pTreeHeader , pKeyNode);
+	end_t = clock();
+   	total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+   	printf("avlTreeFind-Time：%f\n", total_t  );		
+	return temp;
 }
 
 /*******************************************************************/

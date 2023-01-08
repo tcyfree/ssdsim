@@ -25,6 +25,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #include <ctype.h>
 #include <sys/types.h>
 #include "avlTree.h"
+#include "time.h"
 
 #define SECTOR 512
 #define BUFSIZE 200
