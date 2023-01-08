@@ -1448,7 +1448,7 @@ void statistic_output(struct ssd_info *ssd)
 	fprintf(ssd->outputfile,"erase: %13d\n",erase);
 	fprintf(ssd->outputfile,"sub_request_all: %13d, sub_request_success: %13d\n", ssd->sub_request_all, ssd->sub_request_success);
 	// fprintf(ssd->outputfile,"%2d, %8d, %8d, %14lld, %14lld, %10d, %10d, %10d, %8d, %8d, %8d\n", ssd->seq_num, ssd->gc_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, ssd->update_hdd_count, ssd->non_gc_hdd_count, ssd->trace_write_count, ssd->writeback_count, ssd->ssd_write_hdd_seq_count, ssd->ssd_write_hdd_rand_count);
-	fprintf(ssd->outputfile,"%2d, %8d, %8d, %8d, %14lld, %14lld, %10d, %8d, %8d, %8d\n", ssd->seq_num, ssd->gc_count, ssd->erase_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, ssd->trace_write_count, ssd->writeback_count, ssd->ssd_write_hdd_seq_count, ssd->ssd_write_hdd_rand_count);
+	fprintf(ssd->outputfile,"%2d, %8d, %8d, %8d, %14lld, %14lld, %10d, %8d, %8d, %8d, %14lld\n", ssd->seq_num, ssd->gc_count, ssd->erase_count, ssd->moved_page_count, ssd->read_avg/ssd->read_request_count, ssd->write_avg/ssd->write_request_count, ssd->trace_write_count, ssd->writeback_count, ssd->ssd_write_hdd_seq_count, ssd->ssd_write_hdd_rand_count, ssd->find_avltree_time_total);
 	fflush(ssd->outputfile);
 
 	fclose(ssd->outputfile);
