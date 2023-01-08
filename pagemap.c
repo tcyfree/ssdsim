@@ -2287,6 +2287,7 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 {
 	unsigned int i = 0, j = 0, invalid_page = 0, lpn;
 	unsigned int block, active_block; /*记录失效页最多的块号*/
+	clock_t start_t, end_t;
 
 	if (find_active_block(ssd, channel, chip, die, plane) != SUCCESS) /*获取活跃块*/
 	{
@@ -2350,15 +2351,21 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					int hot_w = 0;
 					//查找热读
 					struct buffer_group *buffer_node = NULL, key;
-					key.group = lpn;																		//记录当前的lpn
+					key.group = lpn;
+					start_t = clock();																		//记录当前的lpn
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+					end_t = clock();
+					ssd->find_avltree_time_total +=(end_t - start_t);	
 					if (buffer_node != NULL)
 					{
 						// printf("avl-hot_r:%d\n", lpn);
 						hot_r = 1;
 					}
 					//查找热写
+					start_t = clock();			
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+					end_t = clock();
+					ssd->find_avltree_time_total +=(end_t - start_t);
 					if (buffer_node != NULL)
 					{
 						// printf("avl-hot_r:%d\n", lpn);
@@ -2428,6 +2435,7 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 	unsigned int block,active_block,transfer_size,free_page,page_move_count=0;                           /*记录失效页最多的块号*/
 	struct local *  location=NULL;
 	unsigned int total_invalid_page_num=0;
+	clock_t start_t, end_t;
 
 	transfer_size=0;
 	block=-1;
@@ -2526,13 +2534,19 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					//查找热读
 					struct buffer_group *buffer_node = NULL, key;
 					key.group = j; //记录当前的lpn
+					start_t = clock();
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+					end_t = clock();
+					ssd->find_avltree_time_total +=(end_t - start_t);	
 					if (buffer_node != NULL)
 					{
 						hot_r = 1;
 					}
 					//查找热写
+					start_t = clock();
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+					end_t = clock();
+					ssd->find_avltree_time_total +=(end_t - start_t);
 					if (buffer_node != NULL)
 					{
 						hot_w = 1;
@@ -2596,13 +2610,19 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			//查找热读
 			struct buffer_group *buffer_node = NULL, key;
 			key.group = arr[i];	//记录当前的lpn
+			start_t = clock();
 			buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+			end_t = clock();
+			ssd->find_avltree_time_total +=(end_t - start_t);
 			if (buffer_node != NULL)
 			{
 				hot_r = 1;
 			}
 			//查找热写
+			start_t = clock();
 			buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
+			end_t = clock();
+			ssd->find_avltree_time_total +=(end_t - start_t);
 			if (buffer_node != NULL)
 			{
 				// printf("avl-hot_w:%d\n", lpn);

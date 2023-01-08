@@ -1213,19 +1213,9 @@ TREE_NODE *avlTreeFind
  TREE_NODE *pKeyNode
  )
 {
-	clock_t start_t, end_t;
-   	unsigned long total_t;
-   	start_t = clock();
 	if(!pTree || !pTree->count || !pTree->pTreeHeader)
 		return AVL_NULL;
-	TREE_NODE *temp;
-	temp = (TREE_NODE *)avlTreeLookup(pTree, pTree->pTreeHeader , pKeyNode);
-	end_t = clock();
-   	// total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-   	total_t = (end_t - start_t);
-   	// printf("avlTreeFind-Time：%f\n", total_t  );
-	ssd->find_avltree_time_total +=total_t;		
-	return temp;
+	return (TREE_NODE *)avlTreeLookup(pTree, pTree->pTreeHeader , pKeyNode);
 }
 
 /*******************************************************************/

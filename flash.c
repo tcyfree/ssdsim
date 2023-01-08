@@ -899,6 +899,7 @@ Status write_page(struct ssd_info *ssd,unsigned int channel,unsigned int chip,un
  */
 void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 {
+	clock_t start_t, end_t;
 	if (ssd->is_sequential != 1)
 	{
 		return;
@@ -907,6 +908,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
 	unsigned int lsn;
 	key.group=lpn;//记录当前的lpn
+	start_t = clock();
 	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
 	/************************************************************************************************
@@ -994,6 +996,8 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 			ssd->avl_write->buffer->buffer_head = buffer_node;
 		}
 	}
+	end_t = clock();
+	ssd->find_avltree_time_total +=(end_t - start_t);	
 	// struct write_hot *write_hot = NULL;
 	// if (ssd->write_hot_tail == NULL)
 	// {
@@ -1555,6 +1559,7 @@ struct sub_request * creat_sub_request_pro(struct ssd_info * ssd,unsigned int lp
  */
 void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 {
+	clock_t start_t, end_t;
 	if (ssd->is_sequential != 1)
 	{
 		return;
@@ -1563,6 +1568,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	struct buffer_group *buffer_node=NULL,*pt,*new_node=NULL,key;
 	unsigned int lsn;
 	key.group=lpn;//记录当前的lpn
+	start_t = clock();
 	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
 	/************************************************************************************************
@@ -1650,7 +1656,8 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 			ssd->avl_read->buffer->buffer_head = buffer_node;
 		}
 	}
-
+	end_t = clock();
+	ssd->find_avltree_time_total +=(end_t - start_t);	
 	// struct read_hot *read_hot = NULL;
 	// read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
 	// alloc_assert(read_hot, "read_hot");
