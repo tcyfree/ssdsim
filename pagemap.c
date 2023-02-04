@@ -2360,6 +2360,25 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					{
 						// printf("avl-hot_r:%d\n", lpn);
 						hot_r = 1;
+						// Adjust finded node to keep LRU
+						if (ssd->avl_read->buffer->buffer_head != buffer_node)
+						{
+							if (ssd->avl_read->buffer->buffer_tail == buffer_node)
+							{
+								ssd->avl_read->buffer->buffer_tail = buffer_node->LRU_link_pre;
+								buffer_node->LRU_link_pre->LRU_link_next = NULL;
+							}
+							else if (buffer_node != ssd->avl_read->buffer->buffer_head)
+							{
+								buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+								buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+							}
+							// 将该节点移到buffer的队首
+							buffer_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+							ssd->avl_read->buffer->buffer_head->LRU_link_pre = buffer_node;	 // 双向链表重新设置队头 的前驱设置
+							buffer_node->LRU_link_pre = NULL;
+							ssd->avl_read->buffer->buffer_head = buffer_node;
+						}
 					}
 					//查找热写
 					start_t = clock();			
@@ -2370,6 +2389,25 @@ int get_block(struct ssd_info *ssd,unsigned int channel,unsigned int chip,unsign
 					{
 						// printf("avl-hot_r:%d\n", lpn);
 						hot_w = 1;
+						// Adjust finded node to keep LRU
+						if (ssd->avl_write->buffer->buffer_head != buffer_node)
+						{
+							if (ssd->avl_write->buffer->buffer_tail == buffer_node)
+							{
+								ssd->avl_write->buffer->buffer_tail = buffer_node->LRU_link_pre;
+								buffer_node->LRU_link_pre->LRU_link_next = NULL;
+							}
+							else if (buffer_node != ssd->avl_write->buffer->buffer_head)
+							{
+								buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+								buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+							}
+							// 将该节点移到buffer的队首
+							buffer_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+							ssd->avl_write->buffer->buffer_head->LRU_link_pre = buffer_node;  // 双向链表重新设置队头 的前驱设置
+							buffer_node->LRU_link_pre = NULL;
+							ssd->avl_write->buffer->buffer_head = buffer_node;
+						}
 					}
 					if ((hot_r == 1 || hot_w == 1) && ssd->is_sequential == 2)
 					{
@@ -2537,10 +2575,29 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					start_t = clock();
 					buffer_node = (struct buffer_group *)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key); /*在平衡二叉树中寻找buffer node*/
 					end_t = clock();
-					ssd->find_avltree_time_total +=(end_t - start_t);	
+					ssd->find_avltree_time_total +=(end_t - start_t);
 					if (buffer_node != NULL)
 					{
 						hot_r = 1;
+						// Adjust finded node to keep LRU
+						if (ssd->avl_read->buffer->buffer_head != buffer_node)
+						{
+							if (ssd->avl_read->buffer->buffer_tail == buffer_node)
+							{
+								ssd->avl_read->buffer->buffer_tail = buffer_node->LRU_link_pre;
+								buffer_node->LRU_link_pre->LRU_link_next = NULL;
+							}
+							else if (buffer_node != ssd->avl_read->buffer->buffer_head)
+							{
+								buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+								buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+							}
+							// 将该节点移到buffer的队首
+							buffer_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+							ssd->avl_read->buffer->buffer_head->LRU_link_pre = buffer_node;	 // 双向链表重新设置队头 的前驱设置
+							buffer_node->LRU_link_pre = NULL;
+							ssd->avl_read->buffer->buffer_head = buffer_node;
+						}
 					}
 					//查找热写
 					start_t = clock();
@@ -2550,6 +2607,25 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 					if (buffer_node != NULL)
 					{
 						hot_w = 1;
+						// Adjust finded node to keep LRU
+						if (ssd->avl_write->buffer->buffer_head != buffer_node)
+						{
+							if (ssd->avl_write->buffer->buffer_tail == buffer_node)
+							{
+								ssd->avl_write->buffer->buffer_tail = buffer_node->LRU_link_pre;
+								buffer_node->LRU_link_pre->LRU_link_next = NULL;
+							}
+							else if (buffer_node != ssd->avl_write->buffer->buffer_head)
+							{
+								buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+								buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+							}
+							// 将该节点移到buffer的队首
+							buffer_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+							ssd->avl_write->buffer->buffer_head->LRU_link_pre = buffer_node;  // 双向链表重新设置队头 的前驱设置
+							buffer_node->LRU_link_pre = NULL;
+							ssd->avl_write->buffer->buffer_head = buffer_node;
+						}
 					}
 					//查找的page是否是当前块
 					//机制1：针对第一类Page，执行GC时只将存在于热读列表中同时不在热写列表中的数据保留在SSD中，而将其他数据写入到HDD中。
@@ -2617,6 +2693,25 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			if (buffer_node != NULL)
 			{
 				hot_r = 1;
+				// Adjust finded node to keep LRU
+				if (ssd->avl_read->buffer->buffer_head != buffer_node)
+				{
+					if (ssd->avl_read->buffer->buffer_tail == buffer_node)
+					{
+						ssd->avl_read->buffer->buffer_tail = buffer_node->LRU_link_pre;
+						buffer_node->LRU_link_pre->LRU_link_next = NULL;
+					}
+					else if (buffer_node != ssd->avl_read->buffer->buffer_head)
+					{
+						buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+						buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+					}
+					// 将该节点移到buffer的队首
+					buffer_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+					ssd->avl_read->buffer->buffer_head->LRU_link_pre = buffer_node;	 // 双向链表重新设置队头 的前驱设置
+					buffer_node->LRU_link_pre = NULL;
+					ssd->avl_read->buffer->buffer_head = buffer_node;
+				}
 			}
 			//查找热写
 			start_t = clock();
@@ -2627,6 +2722,25 @@ int uninterrupt_gc(struct ssd_info *ssd,unsigned int channel,unsigned int chip,u
 			{
 				// printf("avl-hot_w:%d\n", lpn);
 				hot_w = 1;
+				// Adjust finded node to keep LRU
+				if (ssd->avl_write->buffer->buffer_head != buffer_node)
+				{
+					if (ssd->avl_write->buffer->buffer_tail == buffer_node)
+					{
+						ssd->avl_write->buffer->buffer_tail = buffer_node->LRU_link_pre;
+						buffer_node->LRU_link_pre->LRU_link_next = NULL;
+					}
+					else if (buffer_node != ssd->avl_write->buffer->buffer_head)
+					{
+						buffer_node->LRU_link_pre->LRU_link_next = buffer_node->LRU_link_next;
+						buffer_node->LRU_link_next->LRU_link_pre = buffer_node->LRU_link_pre;
+					}
+					// 将该节点移到buffer的队首
+					buffer_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; // 双向链表重新设置队头 的后继设置
+					ssd->avl_write->buffer->buffer_head->LRU_link_pre = buffer_node;  // 双向链表重新设置队头 的前驱设置
+					buffer_node->LRU_link_pre = NULL;
+					ssd->avl_write->buffer->buffer_head = buffer_node;
+				}
 			}
 			page_i = get_page_i_by_lpn(ssd, channel, chip, die, plane, block, arr[i]);
 			location = (struct local *)malloc(sizeof(struct local));
