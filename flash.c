@@ -997,7 +997,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		}
 	}
 	end_t = clock();
-	ssd->find_avltree_time_total +=(end_t - start_t);	
+	ssd->find_avltree_time_total2 +=(end_t - start_t);	
 	// struct write_hot *write_hot = NULL;
 	// if (ssd->write_hot_tail == NULL)
 	// {
@@ -1657,7 +1657,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		}
 	}
 	end_t = clock();
-	ssd->find_avltree_time_total +=(end_t - start_t);	
+	ssd->find_avltree_time_total2 +=(end_t - start_t);	
 	// struct read_hot *read_hot = NULL;
 	// read_hot = (struct read_hot *)malloc(sizeof(struct read_hot));
 	// alloc_assert(read_hot, "read_hot");

@@ -246,6 +246,7 @@ struct ssd_info{
 	unsigned long ssd_write_hdd_rand_count; 
 	unsigned long gc_count;
 	int64_t find_avltree_time_total; // us
+	int64_t find_avltree_time_total2; // us
 	unsigned long trace_write_count; // trace write to SDD count
 	unsigned long writeback_count;   // HDD writeback to SSD count
 	unsigned int direct_read_hdd_time;   // read HDD directly miss SSD
