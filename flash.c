@@ -144,6 +144,7 @@ Status allocate_location(struct ssd_info * ssd ,struct sub_request *sub_req)
 			if ((sub_req->state&ssd->dram->map->map_entry[sub_req->lpn].state)!=ssd->dram->map->map_entry[sub_req->lpn].state)
 			{
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->update_read_count++;
 
 				update=(struct sub_request *)malloc(sizeof(struct sub_request));
@@ -311,6 +312,7 @@ Status allocate_location(struct ssd_info * ssd ,struct sub_request *sub_req)
 			if ((sub_req->state&ssd->dram->map->map_entry[sub_req->lpn].state)!=ssd->dram->map->map_entry[sub_req->lpn].state)
 			{
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->update_read_count++;
 				update=(struct sub_request *)malloc(sizeof(struct sub_request));
 				alloc_assert(update,"update");
@@ -911,6 +913,16 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	start_t = clock();
 	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
+	if ((ssd->p_count + ssd->r_count) == 4096)
+	{
+		ssd->r_ratio = ssd->p_count / 4096;
+		ssd->r_queue_length = HOT_QUEUE_LEN * ssd->r_ratio;
+		ssd->p_queue_length = HOT_QUEUE_LEN * (1 - ssd->r_ratio);
+		printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
+		ssd->p_count = 0;
+		ssd->r_count = 0;
+	}
+
 	/************************************************************************************************
 	 *没有命中。
 	 *否则，没有多余的空间供lpn子请求写，这时需要释放一部分空间
@@ -919,7 +931,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	{
 		int avl_count = avlTreeCount(ssd->avl_write->buffer);
 		// printf("avl-count:%d\n", avl_count);
-		if (avl_count < HOT_QUEUE_LEN)
+		if (avl_count < ssd->p_queue_length)
 		{
 			flag = 1; //空间足够，可以直接写进缓存，不需要腾空间
 		}
@@ -1571,6 +1583,16 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	start_t = clock();
 	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_read->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
 
+	if ((ssd->p_count + ssd->r_count) == 4096)
+	{
+		ssd->r_ratio = ssd->p_count / 4096;
+		ssd->r_queue_length = HOT_QUEUE_LEN * ssd->r_ratio;
+		ssd->p_queue_length = HOT_QUEUE_LEN * (1 - ssd->r_ratio);
+		printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
+		ssd->p_count = 0;
+		ssd->r_count = 0;
+	}
+	
 	/************************************************************************************************
 	 *没有命中。
 	 *否则，没有多余的空间供lpn子请求写，这时需要释放一部分空间
@@ -1579,7 +1601,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	{
 		int avl_count = avlTreeCount(ssd->avl_read->buffer);
 		// printf("avl-count:%d\n", avl_count);
-		if (avl_count < HOT_QUEUE_LEN)
+		if (avl_count < ssd->r_queue_length)
 		{
 			flag = 1; //空间足够，可以直接写进缓存，不需要腾空间
 		}
@@ -2303,6 +2325,7 @@ Status copy_back(struct ssd_info * ssd, unsigned int channel, unsigned int chip,
 				sub->next_state_predict_time=ssd->current_time+19*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+(sub->size*ssd->parameter->subpage_capacity)*ssd->parameter->time_characteristics.tWC;
 				ssd->copy_back_count++;
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->update_read_count++;
 				old_ppn=ssd->dram->map->map_entry[sub->lpn].pn;                       /*记录原来的物理页，用于在copyback时，判断是否满足同为奇地址或者偶地址*/
 			}
@@ -2353,6 +2376,7 @@ Status copy_back(struct ssd_info * ssd, unsigned int channel, unsigned int chip,
 					sub->next_state_predict_time=ssd->current_time+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+(size(ssd->dram->map->map_entry[sub->lpn].state))*ssd->parameter->time_characteristics.tRC+(sub->size*ssd->parameter->subpage_capacity)*ssd->parameter->time_characteristics.tWC;
 				}
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->update_read_count++;
 			}
 		}
@@ -2407,6 +2431,7 @@ Status static_write(struct ssd_info * ssd, unsigned int channel,unsigned int chi
 		{
 			sub->next_state_predict_time=ssd->current_time+7*ssd->parameter->time_characteristics.tWC+ssd->parameter->time_characteristics.tR+(size((ssd->dram->map->map_entry[sub->lpn].state^sub->state)))*ssd->parameter->time_characteristics.tRC+(sub->size*ssd->parameter->subpage_capacity)*ssd->parameter->time_characteristics.tWC;
 			ssd->read_count++;
+			ssd->r_count++;
 			ssd->update_read_count++;
 		}
 	}
@@ -3952,6 +3977,7 @@ struct ssd_info *flash_page_state_modify(struct ssd_info *ssd,struct sub_request
 	sub->location->page=page;
 
 	ssd->program_count++;
+	ssd->p_count++;
 	ssd->channel_head[channel].program_count++;
 	ssd->channel_head[channel].chip_head[chip].program_count++;
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page--;
@@ -4645,6 +4671,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 
 				ssd->channel_head[location->channel].chip_head[location->chip].die_head[location->die].plane_head[location->plane].add_reg_ppn=sub->ppn;
 				ssd->read_count++;
+				ssd->r_count++;
 
 				ssd->channel_head[location->channel].current_state=CHANNEL_C_A_TRANSFER;
 				ssd->channel_head[location->channel].current_time=ssd->current_time;
@@ -4770,6 +4797,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 
 				ssd->channel_head[sub_twoplane_one->location->channel].chip_head[sub_twoplane_one->location->chip].die_head[sub_twoplane_one->location->die].plane_head[sub_twoplane_one->location->plane].add_reg_ppn=sub_twoplane_one->ppn;
 				ssd->read_count++;
+				ssd->r_count++;
 
 				sub_twoplane_two->current_time=ssd->current_time;
 				sub_twoplane_two->current_state=SR_R_C_A_TRANSFER;
@@ -4779,6 +4807,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 
 				ssd->channel_head[sub_twoplane_two->location->channel].chip_head[sub_twoplane_two->location->chip].die_head[sub_twoplane_two->location->die].plane_head[sub_twoplane_two->location->plane].add_reg_ppn=sub_twoplane_two->ppn;
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->m_plane_read_count++;
 
 				ssd->channel_head[location->channel].current_state=CHANNEL_C_A_TRANSFER;
@@ -4847,6 +4876,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 
 				ssd->channel_head[sub_interleave_one->location->channel].chip_head[sub_interleave_one->location->chip].die_head[sub_interleave_one->location->die].plane_head[sub_interleave_one->location->plane].add_reg_ppn=sub_interleave_one->ppn;
 				ssd->read_count++;
+				ssd->r_count++;
 
 				sub_interleave_two->current_time=ssd->current_time;
 				sub_interleave_two->current_state=SR_R_C_A_TRANSFER;
@@ -4856,6 +4886,7 @@ Status go_one_step(struct ssd_info * ssd, struct sub_request * sub1,struct sub_r
 
 				ssd->channel_head[sub_interleave_two->location->channel].chip_head[sub_interleave_two->location->chip].die_head[sub_interleave_two->location->die].plane_head[sub_interleave_two->location->plane].add_reg_ppn=sub_interleave_two->ppn;
 				ssd->read_count++;
+				ssd->r_count++;
 				ssd->interleave_read_count++;
 
 				ssd->channel_head[location->channel].current_state=CHANNEL_C_A_TRANSFER;

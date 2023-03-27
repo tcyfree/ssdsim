@@ -839,6 +839,7 @@ struct ssd_info *get_ppn_lf(struct ssd_info *ssd,unsigned int channel,unsigned i
 	sub->location->page=page;
 
 	ssd->program_count++;															/*修改ssd的program_count,free_page等变量*/
+	ssd->p_count++;
 	ssd->channel_head[channel].program_count++;
 	ssd->channel_head[channel].chip_head[chip].program_count++;
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page--;
@@ -1262,6 +1263,7 @@ struct ssd_info *get_ppn(struct ssd_info *ssd,unsigned int channel,unsigned int 
 	sub->location->page=page;
 
 	ssd->program_count++;                                                           /*修改ssd的program_count,free_page等变量*/
+	ssd->p_count++;
 	ssd->channel_head[channel].program_count++;
 	ssd->channel_head[channel].chip_head[chip].program_count++;
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page--;
@@ -1396,6 +1398,7 @@ unsigned int get_ppn_for_gc_lf(struct ssd_info *ssd,unsigned int channel,unsigne
 	ppn=find_ppn(ssd,channel,chip,die,plane,block,page);
 
 	ssd->program_count++;
+	ssd->p_count++;
 	ssd->channel_head[channel].program_count++;
 	ssd->channel_head[channel].chip_head[chip].program_count++;
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page--;
@@ -1479,6 +1482,7 @@ unsigned int get_ppn_for_gc_lf(struct ssd_info *ssd,unsigned int channel,unsigne
 	ppn=find_ppn(ssd,channel,chip,die,plane,block,page);
 
 	ssd->program_count++;
+	ssd->p_count++;
 	ssd->channel_head[channel].program_count++;
 	ssd->channel_head[channel].chip_head[chip].program_count++;
 	ssd->channel_head[channel].chip_head[chip].die_head[die].plane_head[plane].free_page--;

@@ -239,6 +239,11 @@ struct ssd_info{
 	unsigned int max_lsn;
 	unsigned long read_count;
 	unsigned long program_count;
+	unsigned long p_count; // 最近4096所占数量
+	unsigned long r_count;
+	float r_ratio;
+	float r_queue_length;
+	float p_queue_length;
 	unsigned long erase_count;
 	unsigned long update_hdd_count; // 被打包page更新
 	unsigned long non_gc_hdd_count;   // 被打包块未做GC

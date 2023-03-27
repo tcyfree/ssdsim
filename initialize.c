@@ -180,6 +180,8 @@ struct ssd_info *initiation(struct ssd_info *ssd)
 	ssd->newest_req_with_lsb_l = 0;
 	ssd->sub_request_success = 0;
 	ssd->sub_request_all = 0;
+	ssd->r_queue_length = HOT_QUEUE_LEN;
+	ssd->p_queue_length = HOT_QUEUE_LEN;
 
 	for(i=0;i<10;i++){
 		ssd->last_ten_write_lat[i]=0;
