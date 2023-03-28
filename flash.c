@@ -912,10 +912,9 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	key.group=lpn;//记录当前的lpn
 	start_t = clock();
 	buffer_node= (struct buffer_group*)avlTreeFind(ssd->avl_write->buffer, (TREE_NODE *)&key);    /*在平衡二叉树中寻找buffer node*/
-
-	if ((ssd->p_count + ssd->r_count) == 4096)
+	if ((ssd->p_count + ssd->r_count) >= HOT_QUEUE_LEN)
 	{
-		ssd->r_ratio = ssd->p_count / 4096;
+		ssd->r_ratio = (float)ssd->p_count / (ssd->p_count + ssd->r_count);
 		ssd->r_queue_length = HOT_QUEUE_LEN * ssd->r_ratio;
 		ssd->p_queue_length = HOT_QUEUE_LEN * (1 - ssd->r_ratio);
 		printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);

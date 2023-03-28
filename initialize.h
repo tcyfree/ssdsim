@@ -85,7 +85,7 @@ Hao Luo         2011/01/01        2.0           Change               luohao13568
 #define REQUEST_IN 300         //下一条请求到达的时间
 #define OUTPUT 301             //下一次数据输出的时间
 
-#define HOT_QUEUE_LEN 4096      //热读/写队列长度
+#define HOT_QUEUE_LEN 8192      //热读/写队列长度
 
 #define GC_WAIT 400
 #define GC_ERASE_C_A 401
@@ -239,11 +239,11 @@ struct ssd_info{
 	unsigned int max_lsn;
 	unsigned long read_count;
 	unsigned long program_count;
-	unsigned long p_count; // 最近4096所占数量
-	unsigned long r_count;
+	unsigned int p_count; // 最近4096所占数量
+	unsigned int r_count;
 	float r_ratio;
-	float r_queue_length;
-	float p_queue_length;
+	unsigned int r_queue_length;
+	unsigned int p_queue_length;
 	unsigned long erase_count;
 	unsigned long update_hdd_count; // 被打包page更新
 	unsigned long non_gc_hdd_count;   // 被打包块未做GC
