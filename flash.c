@@ -917,7 +917,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		ssd->r_ratio = (float)ssd->p_count / (ssd->p_count + ssd->r_count);
 		ssd->r_queue_length = HOT_QUEUE_LEN * ssd->r_ratio;
 		ssd->p_queue_length = HOT_QUEUE_LEN * (1 - ssd->r_ratio);
-		printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
+		// printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
 		ssd->p_count = 0;
 		ssd->r_count = 0;
 	}
@@ -940,6 +940,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 				 *写请求插入到了平衡二叉树，这时就要修改avl_write的buffer_sector_count；
 				 *维持平衡二叉树调用avlTreeDel()和AVL_TREENODE_FREE()函数；维持LRU算法；
 			**********************************************************************/
+			printf("w-num: %d, time: %lld, ssd-time: %lld\n", ssd->avl_write->buffer->buffer_tail->num, ssd->avl_write->buffer->buffer_tail->in_time, ssd->current_time);
 			pt = ssd->avl_write->buffer->buffer_tail;
 			avlTreeDel(ssd->avl_write->buffer, (TREE_NODE *)pt);
 			if (ssd->avl_write->buffer->buffer_head->LRU_link_next == NULL)
@@ -967,6 +968,8 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 		memset(new_node, 0, sizeof(struct buffer_group));
 
 		new_node->group = lpn;		   //把该lpn设置为缓存新节点
+		new_node->num++;
+	    new_node->in_time = ssd->current_time;
 		new_node->LRU_link_pre = NULL;
 		new_node->LRU_link_next = ssd->avl_write->buffer->buffer_head; //新节点插到队头
 		if (ssd->avl_write->buffer->buffer_head != NULL)
@@ -988,6 +991,7 @@ void record_write_hot(struct ssd_info *ssd, unsigned int lpn)
 	 *****************************************************************************************/
 	else
 	{
+		buffer_node->num++;
 		if (ssd->avl_write->buffer->buffer_head != buffer_node)
 		{
 			if (ssd->avl_write->buffer->buffer_tail == buffer_node)
@@ -1587,7 +1591,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		ssd->r_ratio = ssd->p_count / 4096;
 		ssd->r_queue_length = HOT_QUEUE_LEN * ssd->r_ratio;
 		ssd->p_queue_length = HOT_QUEUE_LEN * (1 - ssd->r_ratio);
-		printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
+		// printf("r_ratio:%f, r_count:%d, p_count:%d, r_queue_length:%d, p_queue_length:%d\n", ssd->r_ratio, ssd->r_count, ssd->p_count, ssd->r_queue_length, ssd->p_queue_length);
 		ssd->p_count = 0;
 		ssd->r_count = 0;
 	}
@@ -1610,6 +1614,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 				 *写请求插入到了平衡二叉树，这时就要修改avl_read的buffer_sector_count；
 				 *维持平衡二叉树调用avlTreeDel()和AVL_TREENODE_FREE()函数；维持LRU算法；
 			**********************************************************************/
+			printf("r-num: %d, time: %lld, ssd-time: %lld\n", ssd->avl_read->buffer->buffer_tail->num, ssd->avl_read->buffer->buffer_tail->in_time, ssd->current_time);
 			pt = ssd->avl_read->buffer->buffer_tail;
 			avlTreeDel(ssd->avl_read->buffer, (TREE_NODE *)pt);
 			if (ssd->avl_read->buffer->buffer_head->LRU_link_next == NULL)
@@ -1637,6 +1642,8 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 		memset(new_node, 0, sizeof(struct buffer_group));
 
 		new_node->group = lpn;		   //把该lpn设置为缓存新节点
+		new_node->num++;
+		new_node->in_time = ssd->current_time;
 		new_node->LRU_link_pre = NULL;
 		new_node->LRU_link_next = ssd->avl_read->buffer->buffer_head; //新节点插到队头
 		if (ssd->avl_read->buffer->buffer_head != NULL)
@@ -1658,6 +1665,7 @@ void record_read_hot(struct ssd_info *ssd, unsigned int lpn)
 	 *****************************************************************************************/
 	else
 	{
+		buffer_node->num++;
 		if (ssd->avl_read->buffer->buffer_head != buffer_node)
 		{
 			if (ssd->avl_read->buffer->buffer_tail == buffer_node)

@@ -480,6 +480,8 @@ typedef struct buffer_group{//缓存的节点大小是lpn，里面的成员group
 	unsigned int stored;                //（判断扇区是不是在缓存里面，1代表在，0代表不在）indicate the sector is stored in buffer or not. 1 indicates the sector is stored and 0 indicate the sector isn't stored.EX.  00110011 indicates the first, second, fifth, sixth sector is stored in buffer.
 	unsigned int dirty_clean;           //（判断子页是否被更新了。1代表被更新了）it is flag of the data has been modified, one bit indicates one subpage. EX. 0001 indicates the first subpage is dirty
 	int flag;			                //（节点的位置）indicates if this node is the last 20% of the LRU list
+	unsigned int num; // 该节点命中次数
+	unsigned long long in_time; // 进入时间
 }buf_node;
 
 
